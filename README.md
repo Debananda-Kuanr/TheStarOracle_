@@ -57,8 +57,14 @@ A full-stack web application for tracking near-Earth asteroids in real time usin
 ---
 
 ## 📸 Screenshots
-
-
+![1](https://github.com/user-attachments/assets/86742e3c-515e-48d3-8e77-4a429c33d7c0)
+<img width="1877" height="902" alt="6" src="https://github.com/user-attachments/assets/7702cccb-7c7f-4dc0-8fcd-db783f6fd149" />
+![2](https://github.com/user-attachments/assets/8cee8500-4f8b-49e1-bc7e-04cd7335afb3)
+![3](https://github.com/user-attachments/assets/0e059648-cbcf-4316-9e81-aff8559bfcd8)
+![4](https://github.com/user-attachments/assets/336cc8dc-2cb5-4d45-8e4a-3ac17d96458f)
+<img width="1896" height="910" alt="10" src="https://github.com/user-attachments/assets/a3468140-9beb-4716-a425-b1b0c4938948" />
+<img width="1918" height="910" alt="image" src="https://github.com/user-attachments/assets/79e75943-32ac-4a17-97d7-0f958cd7f90f" />
+<img width="1918" height="903" alt="7" src="https://github.com/user-attachments/assets/7db83693-2f83-44cf-b096-ca618af43fb7" />
 
 
 ---
