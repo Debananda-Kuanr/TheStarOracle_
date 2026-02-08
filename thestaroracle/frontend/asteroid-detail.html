@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asteroid Details - The Star Oracle</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * { font-family: 'Roboto', sans-serif; }
+        h1, h2, h3, h4, h5, h6, .font-poppins { font-family: 'Poppins', sans-serif; }
+        
+        body {
+            background: linear-gradient(135deg, #0a0a1a 0%, #1a1a3a 50%, #0a0a1a 100%);
+            min-height: 100vh;
+        }
+        
+        /* Animated stars background */
+        .stars {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: 0;
+        }
+        
+        .star {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle 3s infinite;
+        }
+        
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+        
+        /* Glass effect */
+        .glass {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        /* Neon effects */
+        .neon-cyan { 
+            color: #00ffff; 
+            text-shadow: 0 0 10px #00ffff, 0 0 20px #00ffff; 
+        }
+        
+        .neon-purple { 
+            color: #a855f7; 
+            text-shadow: 0 0 10px #a855f7, 0 0 20px #a855f7; 
+        }
+        
+        .neon-red { 
+            color: #ff4444; 
+            text-shadow: 0 0 10px #ff4444, 0 0 20px #ff4444; 
+        }
+        
+        .neon-yellow {
+            color: #fbbf24;
+            text-shadow: 0 0 10px #fbbf24, 0 0 20px #fbbf24;
+        }
+        
+        .neon-green {
+            color: #22c55e;
+            text-shadow: 0 0 10px #22c55e, 0 0 20px #22c55e;
+        }
+        
+        /* Sidebar styles */
+        .sidebar {
+            background: rgba(10, 10, 30, 0.95);
+            border-right: 1px solid rgba(0, 255, 255, 0.2);
+        }
+        
+        .nav-link {
+            transition: all 0.3s ease;
+            border-left: 3px solid transparent;
+        }
+        
+        .nav-link:hover, .nav-link.active {
+            background: rgba(0, 255, 255, 0.1);
+            border-left-color: #00ffff;
+        }
+        
+        /* Asteroid visualization */
+        .asteroid-visual {
+            position: relative;
+            width: 200px;
+            height: 200px;
+            margin: 0 auto;
+        }
+        
+        .asteroid-sphere {
+            width: 100%;
+            height: 100%;
+            border-radius: 40% 60% 55% 45% / 45% 55% 45% 55%;
+            background: linear-gradient(135deg, #6b7280 0%, #374151 50%, #1f2937 100%);
+            box-shadow: 
+                inset -30px -30px 60px rgba(0,0,0,0.6),
+                inset 20px 20px 40px rgba(255,255,255,0.1),
+                0 0 50px rgba(0, 255, 255, 0.3);
+            animation: rotate 20s linear infinite;
+        }
+        
+        .asteroid-sphere.hazardous {
+            box-shadow: 
+                inset -30px -30px 60px rgba(0,0,0,0.6),
+                inset 20px 20px 40px rgba(255,255,255,0.1),
+                0 0 50px rgba(255, 68, 68, 0.5),
+                0 0 100px rgba(255, 68, 68, 0.3);
+        }
+        
+        @keyframes rotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .crater {
+            position: absolute;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #4b5563, #1f2937);
+            box-shadow: inset 2px 2px 5px rgba(0,0,0,0.5);
+        }
+        
+        /* Stat card animation */
+        .stat-card {
+            transition: all 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 255, 255, 0.2);
+        }
+        
+        /* Progress ring */
+        .progress-ring {
+            transform: rotate(-90deg);
+        }
+        
+        .progress-ring-circle {
+            transition: stroke-dashoffset 0.5s ease;
+        }
+        
+        /* Badge */
+        .badge {
+            font-size: 0.65rem;
+            padding: 4px 12px;
+            border-radius: 9999px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        /* Equal-height card columns */
+        .card-col {
+            display: grid;
+            grid-template-rows: 1fr 1fr;
+            gap: 1.5rem;
+        }
+        .card-col > .glass {
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.2); }
+        ::-webkit-scrollbar-thumb { 
+            background: linear-gradient(to bottom, #00ffff, #a855f7);
+            border-radius: 4px;
+        }
+        
+        /* Orbit preview */
+        .orbit-container {
+            position: relative;
+            width: 100%;
+            height: 300px;
+            overflow: hidden;
+        }
+        
+        .orbit-path {
+            position: absolute;
+            border: 2px dashed rgba(0, 255, 255, 0.3);
+            border-radius: 50%;
+        }
+        
+        .earth {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #3b82f6, #22c55e);
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        
+        .orbit-dot {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #f97316;
+            box-shadow: 0 0 15px #f97316;
+            animation: orbit 8s linear infinite;
+        }
+        
+        @keyframes orbit {
+            0% { transform: rotate(0deg) translateX(100px) rotate(0deg); }
+            100% { transform: rotate(360deg) translateX(100px) rotate(-360deg); }
+        }
+    </style>
+</head>
+<body class="text-white">
+    <!-- Stars Background -->
+    <div class="stars" id="stars"></div>
+    
+    <div class="min-h-screen relative z-10">
+        <!-- Main Content -->
+        <main class="w-full p-8">
+            <!-- Loading State -->
+            <div id="loadingState" class="flex items-center justify-center min-h-[80vh]">
+                <div class="text-center">
+                    <div class="animate-spin w-12 h-12 border-4 border-cyan-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+                    <p class="text-gray-400">Loading asteroid data...</p>
+                </div>
+            </div>
+            
+            <!-- Error State -->
+            <div id="errorState" class="hidden flex items-center justify-center min-h-[80vh]">
+                <div class="text-center">
+                    <svg class="w-16 h-16 text-red-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                    </svg>
+                    <h2 class="text-xl font-poppins mb-2">Asteroid Not Found</h2>
+                    <p class="text-gray-400 mb-4">The requested asteroid data could not be loaded.</p>
+                    <a href="live-feed.html" class="inline-block bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/30 rounded-lg px-6 py-3 transition-all">
+                        Return to Live Feed
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Content -->
+            <div id="contentState" class="hidden">
+                <!-- Header -->
+                <div class="mb-10">
+                    <!-- Back link — top left -->
+                    <a href="javascript:history.back()" class="inline-flex items-center text-gray-400 hover:text-cyan-400 transition-colors mb-6 group">
+                        <svg class="w-5 h-5 mr-2 transition-transform group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                        </svg>
+                        Back
+                    </a>
+                    <!-- Row 1: Name + Badge + ID -->
+                    <div class="flex items-center justify-center flex-wrap gap-x-4 gap-y-2">
+                        <h1 class="font-poppins text-3xl font-bold" id="asteroidName">Loading...</h1>
+                        <span class="badge" id="riskBadge">--</span>
+                        <span class="text-gray-400 text-sm tracking-wide font-mono" id="asteroidId">NEO ID: --</span>
+                    </div>
+                    <!-- Row 2: Buttons — with gap -->
+                    <div class="flex items-center justify-center gap-4 mt-5">
+                        <button id="watchlistBtn" onclick="toggleWatchlist()" class="px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-cyan-500/10 border border-gray-700 hover:border-cyan-500/40 transition-all text-sm font-medium">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>
+                            </svg>
+                            <span>Add to Watchlist</span>
+                        </button>
+                        <a id="orbitBtn" href="#" class="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 px-4 py-2 rounded-lg flex items-center gap-2 transition-all text-sm font-medium">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                            <span>View 3D Orbit</span>
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <!-- Left Column - Visualization & Stats -->
+                    <div class="card-col">
+                        <!-- Asteroid Visualization -->
+                        <div class="glass rounded-2xl p-6">
+                            <h2 class="font-poppins text-lg mb-6 neon-purple text-center">Asteroid Visualization</h2>
+                            <div class="asteroid-visual">
+                                <div class="asteroid-sphere" id="asteroidSphere">
+                                    <div class="crater" style="width: 30px; height: 30px; top: 20%; left: 15%;"></div>
+                                    <div class="crater" style="width: 20px; height: 20px; top: 60%; left: 55%;"></div>
+                                    <div class="crater" style="width: 15px; height: 15px; top: 35%; left: 70%;"></div>
+                                    <div class="crater" style="width: 25px; height: 25px; top: 70%; left: 25%;"></div>
+                                </div>
+                            </div>
+                            <div class="text-center mt-4">
+                                <p class="text-sm text-gray-400">Estimated Diameter</p>
+                                <p class="text-2xl font-bold" id="diameterDisplay">--</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Risk Score -->
+                        <div class="glass rounded-2xl p-6">
+                            <h2 class="font-poppins text-lg mb-6 neon-cyan text-center">Risk Score</h2>
+                            <div class="relative w-40 h-40 mx-auto">
+                                <svg class="progress-ring w-full h-full" viewBox="0 0 120 120">
+                                    <circle cx="60" cy="60" r="54" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="12"/>
+                                    <circle id="riskCircle" class="progress-ring-circle" cx="60" cy="60" r="54" fill="none" stroke="#00ffff" stroke-width="12" stroke-linecap="round" stroke-dasharray="339.292" stroke-dashoffset="339.292"/>
+                                </svg>
+                                <div class="absolute inset-0 flex items-center justify-center">
+                                    <div class="text-center">
+                                        <span class="text-4xl font-bold" id="riskScore">--</span>
+                                        <p class="text-xs text-gray-400">/ 100</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <p class="text-center mt-4 text-sm text-gray-400" id="riskDescription">Calculating risk level...</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Middle Column - Details -->
+                    <div class="card-col">
+                        <!-- Orbital Data -->
+                        <div class="glass rounded-2xl p-6">
+                            <h2 class="font-poppins text-lg mb-6 neon-cyan flex items-center">
+                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                                Orbital Data
+                            </h2>
+                            <div class="space-y-4 flex-1">
+                                <div class="flex justify-between items-center py-2 border-b border-gray-700/50">
+                                    <span class="text-gray-400">Semi-Major Axis</span>
+                                    <span class="font-medium" id="semiMajorAxis">--</span>
+                                </div>
+                                <div class="flex justify-between items-center py-2 border-b border-gray-700/50">
+                                    <span class="text-gray-400">Eccentricity</span>
+                                    <span class="font-medium" id="eccentricity">--</span>
+                                </div>
+                                <div class="flex justify-between items-center py-2 border-b border-gray-700/50">
+                                    <span class="text-gray-400">Inclination</span>
+                                    <span class="font-medium" id="inclination">--</span>
+                                </div>
+                                <div class="flex justify-between items-center py-2 border-b border-gray-700/50">
+                                    <span class="text-gray-400">Orbital Period</span>
+                                    <span class="font-medium" id="orbitalPeriod">--</span>
+                                </div>
+                                <div class="flex justify-between items-center py-2">
+                                    <span class="text-gray-400">Perihelion Distance</span>
+                                    <span class="font-medium" id="perihelion">--</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Physical Characteristics -->
+                        <div class="glass rounded-2xl p-6">
+                            <h2 class="font-poppins text-lg mb-6 neon-purple flex items-center">
+                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+                                </svg>
+                                Physical Characteristics
+                            </h2>
+                            <div class="space-y-4 flex-1">
+                                <div class="flex justify-between items-center py-2 border-b border-gray-700/50">
+                                    <span class="text-gray-400">Min Diameter</span>
+                                    <span class="font-medium" id="minDiameter">--</span>
+                                </div>
+                                <div class="flex justify-between items-center py-2 border-b border-gray-700/50">
+                                    <span class="text-gray-400">Max Diameter</span>
+                                    <span class="font-medium" id="maxDiameter">--</span>
+                                </div>
+                                <div class="flex justify-between items-center py-2 border-b border-gray-700/50">
+                                    <span class="text-gray-400">Absolute Magnitude</span>
+                                    <span class="font-medium" id="absoluteMagnitude">--</span>
+                                </div>
+                                <div class="flex justify-between items-center py-2">
+                                    <span class="text-gray-400">Hazardous Status</span>
+                                    <span class="font-medium" id="hazardousStatus">--</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Right Column - Approach Data & Actions -->
+                    <div class="card-col">
+                        <!-- Close Approach Data -->
+                        <div class="glass rounded-2xl p-6">
+                            <h2 class="font-poppins text-lg mb-4 neon-cyan flex items-center">
+                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                                Close Approach
+                            </h2>
+                            <div class="space-y-2 flex-1">
+                                <div class="stat-card glass rounded-lg px-3 py-2">
+                                    <p class="text-[10px] text-gray-400 mb-0.5">Approach Date</p>
+                                    <p class="text-sm font-semibold" id="approachDate">--</p>
+                                </div>
+                                <div class="stat-card glass rounded-lg px-3 py-2">
+                                    <p class="text-[10px] text-gray-400 mb-0.5">Miss Distance</p>
+                                    <p class="text-sm font-semibold text-cyan-400" id="missDistanceKm">--</p>
+                                    <p class="text-[10px] text-gray-500" id="missDistanceLd">--</p>
+                                </div>
+                                <div class="stat-card glass rounded-lg px-3 py-2">
+                                    <p class="text-[10px] text-gray-400 mb-0.5">Relative Velocity</p>
+                                    <p class="text-sm font-semibold text-purple-400" id="velocity">--</p>
+                                    <p class="text-[10px] text-gray-500" id="velocityMps">--</p>
+                                </div>
+                                <div class="stat-card glass rounded-lg px-3 py-2">
+                                    <p class="text-[10px] text-gray-400 mb-0.5">Orbiting Body</p>
+                                    <p class="text-sm font-semibold" id="orbitingBody">--</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Orbit Preview -->
+                        <div class="glass rounded-2xl p-6">
+                            <h2 class="font-poppins text-lg mb-4 neon-purple">Orbit Preview</h2>
+                            <div class="orbit-container">
+                                <div class="orbit-path" style="width: 200px; height: 200px; top: 50%; left: 50%; transform: translate(-50%, -50%);"></div>
+                                <div class="orbit-path" style="width: 140px; height: 140px; top: 50%; left: 50%; transform: translate(-50%, -50%); border-color: rgba(168, 85, 247, 0.3);"></div>
+                                <div class="earth"></div>
+                                <div class="orbit-dot" style="top: 50%; left: 50%;"></div>
+                            </div>
+                            <p class="text-center text-xs text-gray-400 mt-2">Simplified orbit visualization (not to scale)</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Close Approach History -->
+                <div class="glass rounded-2xl p-6 mt-8">
+                    <h2 class="font-poppins text-xl mb-6 neon-cyan">Close Approach History & Predictions</h2>
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead>
+                                <tr class="text-left text-gray-400 border-b border-gray-700">
+                                    <th class="pb-4 font-medium">Date</th>
+                                    <th class="pb-4 font-medium">Miss Distance (km)</th>
+                                    <th class="pb-4 font-medium">Miss Distance (LD)</th>
+                                    <th class="pb-4 font-medium">Velocity (km/h)</th>
+                                    <th class="pb-4 font-medium">Orbiting Body</th>
+                                </tr>
+                            </thead>
+                            <tbody id="approachHistory">
+                                <tr>
+                                    <td colspan="5" class="py-8 text-center text-gray-400">Loading approach data...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- NASA Links -->
+                <div class="glass rounded-2xl p-6 mt-8">
+                    <h2 class="font-poppins text-xl mb-6 neon-purple">Additional Resources</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <a id="nasaJplLink" href="#" target="_blank" class="glass rounded-xl p-4 hover:bg-cyan-500/10 transition-all flex items-center space-x-3">
+                            <div class="w-12 h-12 rounded-lg bg-blue-500/20 flex items-center justify-center">
+                                <svg class="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <p class="font-medium">NASA JPL</p>
+                                <p class="text-xs text-gray-400">Small-Body Database</p>
+                            </div>
+                        </a>
+                        <a id="nasaNeoLink" href="#" target="_blank" class="glass rounded-xl p-4 hover:bg-purple-500/10 transition-all flex items-center space-x-3">
+                            <div class="w-12 h-12 rounded-lg bg-purple-500/20 flex items-center justify-center">
+                                <svg class="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <p class="font-medium">NEO Program</p>
+                                <p class="text-xs text-gray-400">Near Earth Object Data</p>
+                            </div>
+                        </a>
+                        <a href="https://cneos.jpl.nasa.gov/sentry/" target="_blank" class="glass rounded-xl p-4 hover:bg-red-500/10 transition-all flex items-center space-x-3">
+                            <div class="w-12 h-12 rounded-lg bg-red-500/20 flex items-center justify-center">
+                                <svg class="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <p class="font-medium">Sentry System</p>
+                                <p class="text-xs text-gray-400">Impact Monitoring</p>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <script>
+        const NASA_API_KEY = 'QQ7SB7m487vCmeNr9KHy26qgYxrhFBKDrksYwEaO';
+        const NASA_NEO_LOOKUP = 'https://api.nasa.gov/neo/rest/v1/neo/';
+        
+        let currentAsteroid = null;
+        let isInWatchlist = false;
+        
+        // Create animated stars
+        function createStars() {
+            const starsContainer = document.getElementById('stars');
+            for (let i = 0; i < 100; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.animationDelay = Math.random() * 3 + 's';
+                star.style.width = Math.random() * 2 + 1 + 'px';
+                star.style.height = star.style.width;
+                starsContainer.appendChild(star);
+            }
+        }
+        
+        // Check authentication - prevent back button after logout
+        function checkAuth() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.replace('index.html');
+                return;
+            }
+            window.history.pushState(null, '', window.location.href);
+            window.onpopstate = function() {
+                if (!localStorage.getItem('token')) {
+                    window.location.replace('index.html');
+                } else {
+                    window.history.pushState(null, '', window.location.href);
+                }
+            };
+        }
+        
+        // Logout
+        function logout() {
+            localStorage.clear();
+            sessionStorage.clear();
+            window.location.replace('index.html');
+        }
+        
+        // Get asteroid ID from URL
+        function getAsteroidId() {
+            const params = new URLSearchParams(window.location.search);
+            return params.get('id');
+        }
+        
+        // Calculate risk score
+        function calculateRiskScore(asteroid) {
+            const isHazardous = asteroid.is_potentially_hazardous_asteroid;
+            const closeApproach = asteroid.close_approach_data?.[0];
+            const missDistance = parseFloat(closeApproach?.miss_distance?.lunar) || 999;
+            const diameter = (asteroid.estimated_diameter?.kilometers?.estimated_diameter_max + 
+                            asteroid.estimated_diameter?.kilometers?.estimated_diameter_min) / 2 || 0;
+            const velocity = parseFloat(closeApproach?.relative_velocity?.kilometers_per_hour) || 0;
+            
+            let score = 0;
+            
+            // Hazardous flag (40 points)
+            if (isHazardous) score += 40;
+            
+            // Distance scoring (30 points max)
+            if (missDistance < 5) score += 30;
+            else if (missDistance < 10) score += 20;
+            else if (missDistance < 20) score += 10;
+            
+            // Size scoring (20 points max)
+            if (diameter > 0.5) score += 20;
+            else if (diameter > 0.1) score += 10;
+            else if (diameter > 0.05) score += 5;
+            
+            // Velocity scoring (10 points max)
+            if (velocity > 50000) score += 10;
+            else if (velocity > 30000) score += 5;
+            
+            return Math.min(score, 100);
+        }
+        
+        // Get risk level
+        function getRiskLevel(score, isHazardous) {
+            if (isHazardous || score >= 60) return { level: 'hazardous', color: 'text-red-400', bg: 'bg-red-500/20 border-red-500/30', stroke: '#ff4444' };
+            if (score >= 40) return { level: 'high', color: 'text-orange-400', bg: 'bg-orange-500/20 border-orange-500/30', stroke: '#f97316' };
+            if (score >= 25) return { level: 'medium', color: 'text-yellow-400', bg: 'bg-yellow-500/20 border-yellow-500/30', stroke: '#fbbf24' };
+            if (score >= 10) return { level: 'low', color: 'text-green-400', bg: 'bg-green-500/20 border-green-500/30', stroke: '#22c55e' };
+            return { level: 'safe', color: 'text-cyan-400', bg: 'bg-cyan-500/20 border-cyan-500/30', stroke: '#00ffff' };
+        }
+        
+        // Load asteroid data
+        async function loadAsteroid() {
+            const asteroidId = getAsteroidId();
+            console.log('Loading asteroid with ID:', asteroidId);
+            
+            if (!asteroidId) {
+                console.warn('No asteroid ID provided');
+                showError();
+                return;
+            }
+            
+            try {
+                const url = `${NASA_NEO_LOOKUP}${asteroidId}?api_key=${NASA_API_KEY}`;
+                console.log('Fetching from:', url);
+                const response = await fetch(url);
+                console.log('Response status:', response.status, response.statusText);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const asteroid = await response.json();
+                console.log('Asteroid data received:', asteroid);
+                currentAsteroid = asteroid;
+                
+                displayAsteroid(asteroid);
+                checkWatchlist(asteroidId);
+                
+            } catch (error) {
+                console.error('Error loading asteroid:', error);
+                showError();
+            }
+        }
+        
+        // Display asteroid data
+        function displayAsteroid(asteroid) {
+            document.getElementById('loadingState').classList.add('hidden');
+            document.getElementById('contentState').classList.remove('hidden');
+            
+            // Basic info
+            document.getElementById('asteroidName').textContent = asteroid.name;
+            document.getElementById('asteroidId').textContent = `NEO ID: ${asteroid.id}`;
+            
+            // Risk calculation
+            const riskScore = calculateRiskScore(asteroid);
+            const riskInfo = getRiskLevel(riskScore, asteroid.is_potentially_hazardous_asteroid);
+            
+            document.getElementById('riskBadge').textContent = riskInfo.level.toUpperCase();
+            document.getElementById('riskBadge').className = `badge ${riskInfo.bg} ${riskInfo.color} border`;
+            
+            // Risk score animation
+            document.getElementById('riskScore').textContent = riskScore;
+            document.getElementById('riskScore').className = `text-4xl font-bold ${riskInfo.color}`;
+            const circle = document.getElementById('riskCircle');
+            circle.style.stroke = riskInfo.stroke;
+            const offset = 339.292 - (riskScore / 100) * 339.292;
+            setTimeout(() => {
+                circle.style.strokeDashoffset = offset;
+            }, 100);
+            
+            // Risk description
+            const descriptions = {
+                hazardous: 'POTENTIALLY HAZARDOUS - Close monitoring recommended',
+                high: 'HIGH RISK - Significant attention required',
+                medium: 'MODERATE RISK - Standard monitoring',
+                low: 'LOW RISK - Minimal concern',
+                safe: 'SAFE - No immediate concern'
+            };
+            document.getElementById('riskDescription').textContent = descriptions[riskInfo.level];
+            document.getElementById('riskDescription').className = `text-center mt-4 text-sm ${riskInfo.color}`;
+            
+            // Update asteroid sphere for hazardous
+            if (asteroid.is_potentially_hazardous_asteroid) {
+                document.getElementById('asteroidSphere').classList.add('hazardous');
+                document.getElementById('asteroidName').classList.add('neon-red');
+            } else {
+                document.getElementById('asteroidName').classList.add('neon-cyan');
+            }
+            
+            // Physical characteristics
+            const diamMin = asteroid.estimated_diameter?.meters?.estimated_diameter_min?.toFixed(1) || '--';
+            const diamMax = asteroid.estimated_diameter?.meters?.estimated_diameter_max?.toFixed(1) || '--';
+            const diamAvg = ((parseFloat(diamMin) + parseFloat(diamMax)) / 2).toFixed(1);
+            
+            document.getElementById('diameterDisplay').textContent = `${diamAvg}m avg`;
+            document.getElementById('minDiameter').textContent = `${diamMin} m`;
+            document.getElementById('maxDiameter').textContent = `${diamMax} m`;
+            document.getElementById('absoluteMagnitude').textContent = asteroid.absolute_magnitude_h?.toFixed(2) || '--';
+            document.getElementById('hazardousStatus').innerHTML = asteroid.is_potentially_hazardous_asteroid 
+                ? '<span class="text-red-400">⚠️ Yes</span>' 
+                : '<span class="text-green-400">✓ No</span>';
+            
+            // Orbital data
+            const orbital = asteroid.orbital_data || {};
+            document.getElementById('semiMajorAxis').textContent = orbital.semi_major_axis ? `${parseFloat(orbital.semi_major_axis).toFixed(4)} AU` : '--';
+            document.getElementById('eccentricity').textContent = orbital.eccentricity ? parseFloat(orbital.eccentricity).toFixed(6) : '--';
+            document.getElementById('inclination').textContent = orbital.inclination ? `${parseFloat(orbital.inclination).toFixed(4)}°` : '--';
+            document.getElementById('orbitalPeriod').textContent = orbital.orbital_period ? `${parseFloat(orbital.orbital_period).toFixed(2)} days` : '--';
+            document.getElementById('perihelion').textContent = orbital.perihelion_distance ? `${parseFloat(orbital.perihelion_distance).toFixed(4)} AU` : '--';
+            
+            // Close approach data
+            const approach = asteroid.close_approach_data?.[0];
+            if (approach) {
+                document.getElementById('approachDate').textContent = formatDate(approach.close_approach_date_full);
+                document.getElementById('missDistanceKm').textContent = `${Number(parseFloat(approach.miss_distance?.kilometers).toFixed(0)).toLocaleString()} km`;
+                document.getElementById('missDistanceLd').textContent = `${parseFloat(approach.miss_distance?.lunar).toFixed(2)} Lunar Distances`;
+                document.getElementById('velocity').textContent = `${Number(parseFloat(approach.relative_velocity?.kilometers_per_hour).toFixed(0)).toLocaleString()} km/h`;
+                document.getElementById('velocityMps').textContent = `${Number(parseFloat(approach.relative_velocity?.kilometers_per_second).toFixed(2)).toLocaleString()} km/s`;
+                document.getElementById('orbitingBody').textContent = approach.orbiting_body || 'Earth';
+            }
+            
+            // Approach history table
+            const historyBody = document.getElementById('approachHistory');
+            if (asteroid.close_approach_data && asteroid.close_approach_data.length > 0) {
+                historyBody.innerHTML = asteroid.close_approach_data.slice(0, 10).map(ap => `
+                    <tr class="border-b border-gray-700/30 hover:bg-white/5">
+                        <td class="py-3">${formatDate(ap.close_approach_date_full)}</td>
+                        <td class="py-3">${Number(parseFloat(ap.miss_distance?.kilometers).toFixed(0)).toLocaleString()}</td>
+                        <td class="py-3">${parseFloat(ap.miss_distance?.lunar).toFixed(2)}</td>
+                        <td class="py-3">${Number(parseFloat(ap.relative_velocity?.kilometers_per_hour).toFixed(0)).toLocaleString()}</td>
+                        <td class="py-3">${ap.orbiting_body}</td>
+                    </tr>
+                `).join('');
+            } else {
+                historyBody.innerHTML = '<tr><td colspan="5" class="py-8 text-center text-gray-400">No approach data available</td></tr>';
+            }
+            
+            // NASA links
+            document.getElementById('nasaJplLink').href = asteroid.nasa_jpl_url || '#';
+            document.getElementById('nasaNeoLink').href = `https://ssd.jpl.nasa.gov/tools/sbdb_lookup.html#/?sstr=${asteroid.id}`;
+            document.getElementById('orbitBtn').href = `orbit-3d.html?id=${asteroid.id}`;
+        }
+        
+        // Format date
+        function formatDate(dateStr) {
+            if (!dateStr) return '--';
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('en-US', { 
+                year: 'numeric',
+                month: 'short', 
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+        
+        // Show error state
+        function showError() {
+            document.getElementById('loadingState').classList.add('hidden');
+            document.getElementById('errorState').classList.remove('hidden');
+        }
+        
+        // Check watchlist status
+        function checkWatchlist(asteroidId) {
+            const token = localStorage.getItem('token');
+            
+            fetch('../backend/api/watchlist.php?action=list', {
+                headers: {
+                    'Authorization': 'Bearer ' + token
+                }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    isInWatchlist = data.data.some(item => item.asteroid_id == asteroidId);
+                    updateWatchlistButton();
+                }
+            })
+            .catch(err => {
+                console.warn('Could not load watchlist from database, using localStorage', err);
+                const watchlist = JSON.parse(localStorage.getItem('watchlist') || '[]');
+                isInWatchlist = watchlist.some(item => item.id === asteroidId);
+                updateWatchlistButton();
+            });
+        }
+        
+        // Update watchlist button
+        function updateWatchlistButton() {
+            const btn = document.getElementById('watchlistBtn');
+            if (isInWatchlist) {
+                btn.innerHTML = `
+                    <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>
+                    </svg>
+                    <span>In Watchlist</span>
+                `;
+                btn.classList.add('bg-yellow-500/20', 'border-yellow-500/30');
+            } else {
+                btn.innerHTML = `
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>
+                    </svg>
+                    <span>Add to Watchlist</span>
+                `;
+                btn.classList.remove('bg-yellow-500/20', 'border-yellow-500/30');
+            }
+        }
+        
+        // Toggle watchlist
+        function toggleWatchlist() {
+            if (!currentAsteroid) {
+                console.error('No asteroid loaded');
+                return;
+            }
+            
+            const asteroidId = currentAsteroid.id;
+            const token = localStorage.getItem('token');
+            
+            if (!token) {
+                alert('Please log in to use the watchlist');
+                return;
+            }
+            
+            const btn = document.getElementById('watchlistBtn');
+            btn.style.opacity = '0.5';
+            btn.style.pointerEvents = 'none';
+            
+            if (isInWatchlist) {
+                // Remove from watchlist
+                fetch('../backend/api/watchlist.php?action=remove', {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify({ asteroid_id: asteroidId })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    console.log('Remove response:', data);
+                    if (data.success) {
+                        isInWatchlist = false;
+                        updateWatchlistButton();
+                        // Also remove from localStorage
+                        let watchlist = JSON.parse(localStorage.getItem('watchlist') || '[]');
+                        watchlist = watchlist.filter(item => item.id !== asteroidId && item.asteroid_id !== asteroidId);
+                        localStorage.setItem('watchlist', JSON.stringify(watchlist));
+                    } else {
+                        alert('Error: ' + (data.error || 'Failed to remove'));
+                    }
+                })
+                .catch(err => {
+                    console.error('Error removing from watchlist:', err);
+                    alert('Network error removing from watchlist');
+                })
+                .finally(() => {
+                    btn.style.opacity = '1';
+                    btn.style.pointerEvents = 'auto';
+                });
+            } else {
+                // Add to watchlist
+                const approach = currentAsteroid.close_approach_data?.[0];
+                const watchlistItem = {
+                    asteroid_id: asteroidId,
+                    asteroid_name: currentAsteroid.name
+                };
+                
+                fetch('../backend/api/watchlist.php?action=add', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify(watchlistItem)
+                })
+                .then(res => res.json())
+                .then(data => {
+                    console.log('Add response:', data);
+                    if (data.success) {
+                        isInWatchlist = true;
+                        updateWatchlistButton();
+                        // Also add to localStorage as backup
+                        let watchlist = JSON.parse(localStorage.getItem('watchlist') || '[]');
+                        watchlistItem.id = asteroidId;
+                        watchlistItem.name = currentAsteroid.name;
+                        watchlistItem.added_date = new Date().toISOString();
+                        watchlistItem.is_hazardous = currentAsteroid.is_potentially_hazardous_asteroid;
+                        watchlist.push(watchlistItem);
+                        localStorage.setItem('watchlist', JSON.stringify(watchlist));
+                    } else {
+                        alert('Error: ' + (data.error || 'Failed to add'));
+                    }
+                })
+                .catch(err => {
+                    console.error('Error adding to watchlist:', err);
+                    alert('Network error adding to watchlist');
+                })
+                .finally(() => {
+                    btn.style.opacity = '1';
+                    btn.style.pointerEvents = 'auto';
+                });
+            }
+        }
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            createStars();
+            checkAuth();
+            loadAsteroid();
+        });
+    </script>
+</body>
+</html>

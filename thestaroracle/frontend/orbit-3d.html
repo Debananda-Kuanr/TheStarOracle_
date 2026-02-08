@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Orbit Visualization - The Star Oracle</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <style>
+        * { font-family: 'Roboto', sans-serif; }
+        h1, h2, h3, h4, h5, h6, .font-poppins { font-family: 'Poppins', sans-serif; }
+        
+        body {
+            background: #000;
+            margin: 0;
+            overflow: hidden;
+        }
+        
+        /* Glass effect */
+        .glass {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        /* Neon effects */
+        .neon-indigo { 
+            color: #667eea; 
+            text-shadow: 0 0 10px #667eea, 0 0 20px #667eea; 
+        }
+        
+        .neon-purple { 
+            color: #a855f7; 
+            text-shadow: 0 0 10px #a855f7, 0 0 20px #a855f7; 
+        }
+        
+        /* Canvas container */
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+        }
+        
+        /* UI Overlay */
+        .ui-overlay {
+            position: fixed;
+            z-index: 10;
+            pointer-events: none;
+        }
+        
+        .ui-overlay > * {
+            pointer-events: auto;
+        }
+        
+        /* Controls Panel */
+        .controls-panel {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 20;
+        }
+        
+        /* Info Panel */
+        .info-panel {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            width: 320px;
+            z-index: 20;
+        }
+        
+        /* Header */
+        .header-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 30;
+        }
+        
+        /* Tooltip */
+        .tooltip {
+            position: fixed;
+            z-index: 100;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+        }
+        
+        /* Range slider styling */
+        input[type="range"] {
+            -webkit-appearance: none;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            height: 6px;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #00ffff;
+            cursor: pointer;
+            box-shadow: 0 0 10px #00ffff;
+        }
+        
+        /* Loading overlay */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        
+        /* Keyboard hints */
+        .key-hint {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 24px;
+            height: 24px;
+            padding: 0 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body class="text-white">
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="text-center">
+            <div class="animate-spin w-16 h-16 border-4 border-indigo-500 border-t-transparent rounded-full mx-auto mb-6"></div>
+            <h2 class="font-poppins text-2xl neon-indigo mb-2">Initializing 3D View</h2>
+            <p class="text-gray-400" id="loadingStatus">Loading orbital data...</p>
+        </div>
+    </div>
+    
+    <!-- Canvas Container -->
+    <div id="canvas-container"></div>
+    
+    <!-- Header Bar -->
+    <div class="header-bar glass px-6 py-4">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <a href="dashboard.html" class="flex items-center space-x-3 text-gray-400 hover:text-indigo-400 transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                    </svg>
+                    <span>Back</span>
+                </a>
+                <div class="w-px h-6 bg-gray-700"></div>
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 flex items-center justify-center">
+                        <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M10 2L2 6l8 4 8-4-8-4zM2 9l8 4 8-4M2 13l8 4 8-4"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h1 class="font-poppins text-lg neon-indigo">3D Orbit View</h1>
+                        <p class="text-xs text-gray-400" id="asteroidTitle">Loading...</p>
+                    </div>
+                </div>
+            </div>
+            <div class="flex items-center space-x-4">
+                <button onclick="toggleFullscreen()" class="glass p-2 rounded-lg hover:bg-indigo-500/20 transition-all" title="Fullscreen">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/>
+                    </svg>
+                </button>
+                <button onclick="resetCamera()" class="glass p-2 rounded-lg hover:bg-indigo-500/20 transition-all" title="Reset View">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                    </svg>
+                </button>
+                <button onclick="toggleHelp()" class="glass p-2 rounded-lg hover:bg-indigo-500/20 transition-all" title="Help">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Info Panel -->
+    <div class="info-panel glass rounded-2xl p-6" id="infoPanel">
+        <h2 class="font-poppins text-lg neon-purple mb-4">Orbital Information</h2>
+        
+        <div class="space-y-4">
+            <div>
+                <p class="text-xs text-gray-400">Semi-Major Axis</p>
+                <p class="text-lg font-medium" id="infoSma">-- AU</p>
+            </div>
+            <div>
+                <p class="text-xs text-gray-400">Eccentricity</p>
+                <p class="text-lg font-medium" id="infoEcc">--</p>
+            </div>
+            <div>
+                <p class="text-xs text-gray-400">Inclination</p>
+                <p class="text-lg font-medium" id="infoInc">--°</p>
+            </div>
+            <div>
+                <p class="text-xs text-gray-400">Orbital Period</p>
+                <p class="text-lg font-medium" id="infoPeriod">-- days</p>
+            </div>
+            
+            <hr class="border-gray-700">
+            
+            <div>
+                <p class="text-xs text-gray-400">Current Distance</p>
+                <p class="text-lg font-medium text-indigo-400" id="infoDistance">-- km</p>
+            </div>
+            <div>
+                <p class="text-xs text-gray-400">Relative Velocity</p>
+                <p class="text-lg font-medium text-purple-400" id="infoVelocity">-- km/h</p>
+            </div>
+        </div>
+        
+        <div class="mt-6 pt-4 border-t border-gray-700">
+            <h3 class="text-sm font-medium mb-3">Legend</h3>
+            <div class="space-y-2 text-sm">
+                <div class="flex items-center space-x-2">
+                    <div class="w-3 h-3 rounded-full bg-yellow-400"></div>
+                    <span class="text-gray-400">Sun</span>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <div class="w-3 h-3 rounded-full bg-blue-400"></div>
+                    <span class="text-gray-400">Earth</span>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <div class="w-3 h-3 rounded-full bg-orange-400"></div>
+                    <span class="text-gray-400">Asteroid</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Controls Panel -->
+    <div class="controls-panel glass rounded-2xl px-8 py-4">
+        <div class="flex items-center space-x-8">
+            <!-- Play/Pause -->
+            <button onclick="toggleAnimation()" class="flex items-center space-x-2 hover:text-indigo-400 transition-colors" id="playBtn">
+                <svg id="playIcon" class="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M8 5v14l11-7z"/>
+                </svg>
+                <span class="text-sm">Play</span>
+            </button>
+            
+            <!-- Speed Control -->
+            <div class="flex items-center space-x-4">
+                <span class="text-sm text-gray-400">Speed</span>
+                <input type="range" id="speedSlider" min="0.1" max="5" step="0.1" value="1" onchange="updateSpeed(this.value)" class="w-32">
+                <span class="text-sm w-12" id="speedValue">1.0x</span>
+            </div>
+            
+            <!-- Zoom Controls -->
+            <div class="flex items-center space-x-2">
+                <span class="text-sm text-gray-400">Zoom</span>
+                <button onclick="zoomIn()" class="glass p-2 rounded-lg hover:bg-indigo-500/20 transition-all">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                    </svg>
+                </button>
+                <button onclick="zoomOut()" class="glass p-2 rounded-lg hover:bg-indigo-500/20 transition-all">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 12H6"/>
+                    </svg>
+                </button>
+            </div>
+            
+            <!-- View Options -->
+            <div class="flex items-center space-x-2">
+                <button onclick="setView('top')" class="glass px-3 py-2 rounded-lg hover:bg-indigo-500/20 transition-all text-sm" title="Top View">Top</button>
+                <button onclick="setView('side')" class="glass px-3 py-2 rounded-lg hover:bg-indigo-500/20 transition-all text-sm" title="Side View">Side</button>
+                <button onclick="setView('follow')" class="glass px-3 py-2 rounded-lg hover:bg-indigo-500/20 transition-all text-sm" title="Follow Asteroid">Follow</button>
+            </div>
+            
+            <!-- Show/Hide Options -->
+            <div class="flex items-center space-x-2">
+                <label class="flex items-center space-x-2 cursor-pointer">
+                    <input type="checkbox" id="showOrbits" checked onchange="toggleOrbits()" class="w-4 h-4 accent-indigo-400">
+                    <span class="text-sm">Orbits</span>
+                </label>
+                <label class="flex items-center space-x-2 cursor-pointer">
+                    <input type="checkbox" id="showLabels" checked onchange="toggleLabels()" class="w-4 h-4 accent-indigo-400">
+                    <span class="text-sm">Labels</span>
+                </label>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Help Modal -->
+    <div id="helpModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/80">
+        <div class="glass rounded-2xl p-8 max-w-md">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="font-poppins text-xl neon-indigo">Controls</h2>
+                <button onclick="toggleHelp()" class="text-gray-400 hover:text-white">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="space-y-4">
+                <div class="flex items-center justify-between">
+                    <span class="text-gray-400">Rotate View</span>
+                    <span class="text-sm">Left Mouse + Drag</span>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-gray-400">Pan View</span>
+                    <span class="text-sm">Right Mouse + Drag</span>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-gray-400">Zoom</span>
+                    <span class="text-sm">Scroll Wheel</span>
+                </div>
+                <hr class="border-gray-700">
+                <div class="flex items-center justify-between">
+                    <span class="text-gray-400">Play/Pause</span>
+                    <span class="key-hint">Space</span>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-gray-400">Reset View</span>
+                    <span class="key-hint">R</span>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-gray-400">Toggle Fullscreen</span>
+                    <span class="key-hint">F</span>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-gray-400">Top View</span>
+                    <span class="key-hint">1</span>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-gray-400">Side View</span>
+                    <span class="key-hint">2</span>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-gray-400">Follow Asteroid</span>
+                    <span class="key-hint">3</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Tooltip -->
+    <div id="tooltip" class="tooltip glass rounded-lg px-4 py-2 hidden">
+        <p class="font-medium" id="tooltipTitle">--</p>
+        <p class="text-xs text-gray-400" id="tooltipContent">--</p>
+    </div>
+    
+    <script>
+        // Three.js variables
+        let scene, camera, renderer, controls;
+        let sun, earth, asteroid, earthOrbit, asteroidOrbit;
+        let earthLabel, asteroidLabel;
+        let isPlaying = false;
+        let animationSpeed = 1;
+        let followMode = false;
+        let asteroidData = null;
+        
+        // Orbital parameters (will be updated with real data)
+        let asteroidOrbitalParams = {
+            sma: 1.5,      // Semi-major axis in AU
+            ecc: 0.2,      // Eccentricity
+            inc: 10,       // Inclination in degrees
+            period: 500    // Orbital period in days
+        };
+        
+        const NASA_API_KEY = 'QQ7SB7m487vCmeNr9KHy26qgYxrhFBKDrksYwEaO';
+        const NASA_NEO_LOOKUP = 'https://api.nasa.gov/neo/rest/v1/neo/';
+        const AU_TO_SCALE = 50; // 1 AU = 50 units in scene
+        
+        // Initialize Three.js scene
+        function init() {
+            const container = document.getElementById('canvas-container');
+            
+            // Scene
+            scene = new THREE.Scene();
+            
+            // Camera
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 10000);
+            camera.position.set(0, 100, 150);
+            
+            // Renderer
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            container.appendChild(renderer.domElement);
+            
+            // Controls
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.minDistance = 20;
+            controls.maxDistance = 500;
+            
+            // Add starfield background
+            createStarfield();
+            
+            // Add sun
+            createSun();
+            
+            // Add Earth and orbit
+            createEarth();
+            
+            // Add ambient light
+            const ambientLight = new THREE.AmbientLight(0x404040, 0.5);
+            scene.add(ambientLight);
+            
+            // Add point light from sun
+            const sunLight = new THREE.PointLight(0xffffff, 2, 1000);
+            sunLight.position.set(0, 0, 0);
+            scene.add(sunLight);
+            
+            // Window resize handler
+            window.addEventListener('resize', onWindowResize);
+            
+            // Keyboard controls
+            window.addEventListener('keydown', onKeyDown);
+            
+            // Mouse move for tooltips
+            window.addEventListener('mousemove', onMouseMove);
+            
+            // Start animation loop
+            animate();
+        }
+        
+        // Create starfield
+        function createStarfield() {
+            const geometry = new THREE.BufferGeometry();
+            const vertices = [];
+            
+            for (let i = 0; i < 10000; i++) {
+                vertices.push(
+                    (Math.random() - 0.5) * 2000,
+                    (Math.random() - 0.5) * 2000,
+                    (Math.random() - 0.5) * 2000
+                );
+            }
+            
+            geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+            
+            const material = new THREE.PointsMaterial({
+                color: 0xffffff,
+                size: 0.5,
+                sizeAttenuation: true
+            });
+            
+            const stars = new THREE.Points(geometry, material);
+            scene.add(stars);
+        }
+        
+        // Create sun
+        function createSun() {
+            const geometry = new THREE.SphereGeometry(5, 32, 32);
+            const material = new THREE.MeshBasicMaterial({
+                color: 0xffff00,
+                emissive: 0xffff00,
+                emissiveIntensity: 1
+            });
+            sun = new THREE.Mesh(geometry, material);
+            scene.add(sun);
+            
+            // Sun glow
+            const glowGeometry = new THREE.SphereGeometry(7, 32, 32);
+            const glowMaterial = new THREE.MeshBasicMaterial({
+                color: 0xffff00,
+                transparent: true,
+                opacity: 0.3
+            });
+            const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+            sun.add(glow);
+        }
+        
+        // Create Earth
+        function createEarth() {
+            // Earth
+            const earthGeometry = new THREE.SphereGeometry(2, 32, 32);
+            const earthMaterial = new THREE.MeshStandardMaterial({
+                color: 0x4488ff,
+                emissive: 0x112244,
+                roughness: 0.8,
+                metalness: 0.2
+            });
+            earth = new THREE.Mesh(earthGeometry, earthMaterial);
+            earth.position.set(AU_TO_SCALE, 0, 0);
+            scene.add(earth);
+            
+            // Earth orbit line
+            earthOrbit = createOrbitLine(AU_TO_SCALE, 0, 0x4488ff);
+            scene.add(earthOrbit);
+        }
+        
+        // Create orbit line
+        function createOrbitLine(sma, ecc, color, inc = 0) {
+            const points = [];
+            const segments = 128;
+            
+            for (let i = 0; i <= segments; i++) {
+                const theta = (i / segments) * Math.PI * 2;
+                const r = sma * (1 - ecc * ecc) / (1 + ecc * Math.cos(theta));
+                
+                const x = r * Math.cos(theta);
+                const z = r * Math.sin(theta);
+                const y = z * Math.sin(inc * Math.PI / 180);
+                const zNew = z * Math.cos(inc * Math.PI / 180);
+                
+                points.push(new THREE.Vector3(x, y, zNew));
+            }
+            
+            const geometry = new THREE.BufferGeometry().setFromPoints(points);
+            const material = new THREE.LineBasicMaterial({
+                color: color,
+                transparent: true,
+                opacity: 0.5
+            });
+            
+            return new THREE.Line(geometry, material);
+        }
+        
+        // Create asteroid
+        function createAsteroid() {
+            // Asteroid
+            const asteroidGeometry = new THREE.DodecahedronGeometry(1.5, 0);
+            const asteroidMaterial = new THREE.MeshStandardMaterial({
+                color: 0xff8800,
+                emissive: 0x442200,
+                roughness: 0.9,
+                metalness: 0.1
+            });
+            asteroid = new THREE.Mesh(asteroidGeometry, asteroidMaterial);
+            scene.add(asteroid);
+            
+            // Asteroid glow for hazardous
+            if (asteroidData && asteroidData.is_potentially_hazardous_asteroid) {
+                const glowGeometry = new THREE.DodecahedronGeometry(2, 0);
+                const glowMaterial = new THREE.MeshBasicMaterial({
+                    color: 0xff4444,
+                    transparent: true,
+                    opacity: 0.3
+                });
+                const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+                asteroid.add(glow);
+            }
+            
+            // Asteroid orbit
+            asteroidOrbit = createOrbitLine(
+                asteroidOrbitalParams.sma * AU_TO_SCALE,
+                asteroidOrbitalParams.ecc,
+                asteroidData?.is_potentially_hazardous_asteroid ? 0xff4444 : 0xff8800,
+                asteroidOrbitalParams.inc
+            );
+            scene.add(asteroidOrbit);
+            
+            // Initial position
+            updateAsteroidPosition(0);
+        }
+        
+        // Update asteroid position
+        function updateAsteroidPosition(time) {
+            if (!asteroid) return;
+            
+            const sma = asteroidOrbitalParams.sma * AU_TO_SCALE;
+            const ecc = asteroidOrbitalParams.ecc;
+            const inc = asteroidOrbitalParams.inc * Math.PI / 180;
+            const period = asteroidOrbitalParams.period;
+            
+            // Mean anomaly
+            const M = (time / period) * Math.PI * 2;
+            
+            // Eccentric anomaly (simplified)
+            let E = M;
+            for (let i = 0; i < 10; i++) {
+                E = M + ecc * Math.sin(E);
+            }
+            
+            // True anomaly
+            const theta = 2 * Math.atan2(
+                Math.sqrt(1 + ecc) * Math.sin(E / 2),
+                Math.sqrt(1 - ecc) * Math.cos(E / 2)
+            );
+            
+            // Distance from focus
+            const r = sma * (1 - ecc * Math.cos(E));
+            
+            // Position
+            const x = r * Math.cos(theta);
+            const z = r * Math.sin(theta);
+            const y = z * Math.sin(inc);
+            const zNew = z * Math.cos(inc);
+            
+            asteroid.position.set(x, y, zNew);
+            
+            // Update distance display
+            const earthPos = earth.position;
+            const distance = asteroid.position.distanceTo(earthPos);
+            const distanceKm = (distance / AU_TO_SCALE) * 149597870.7;
+            document.getElementById('infoDistance').textContent = `${Number(distanceKm.toFixed(0)).toLocaleString()} km`;
+        }
+        
+        // Update Earth position
+        function updateEarthPosition(time) {
+            const angle = (time / 365) * Math.PI * 2;
+            earth.position.x = Math.cos(angle) * AU_TO_SCALE;
+            earth.position.z = Math.sin(angle) * AU_TO_SCALE;
+        }
+        
+        // Load asteroid data
+        async function loadAsteroidData() {
+            const params = new URLSearchParams(window.location.search);
+            const asteroidId = params.get('id');
+            
+            try {
+                if (asteroidId) {
+                    document.getElementById('loadingStatus').textContent = 'Fetching asteroid data...';
+                    
+                    const response = await fetch(`${NASA_NEO_LOOKUP}${asteroidId}?api_key=${NASA_API_KEY}`);
+                    if (response.ok) {
+                        asteroidData = await response.json();
+                        
+                        // Update orbital parameters
+                        if (asteroidData.orbital_data) {
+                            const od = asteroidData.orbital_data;
+                            asteroidOrbitalParams = {
+                                sma: parseFloat(od.semi_major_axis) || 1.5,
+                                ecc: parseFloat(od.eccentricity) || 0.2,
+                                inc: parseFloat(od.inclination) || 10,
+                                period: parseFloat(od.orbital_period) || 500
+                            };
+                        }
+                        
+                        // Update info panel
+                        document.getElementById('asteroidTitle').textContent = asteroidData.name;
+                        document.getElementById('infoSma').textContent = `${asteroidOrbitalParams.sma.toFixed(4)} AU`;
+                        document.getElementById('infoEcc').textContent = asteroidOrbitalParams.ecc.toFixed(6);
+                        document.getElementById('infoInc').textContent = `${asteroidOrbitalParams.inc.toFixed(4)}°`;
+                        document.getElementById('infoPeriod').textContent = `${asteroidOrbitalParams.period.toFixed(2)} days`;
+                        
+                        // Velocity
+                        const velocity = asteroidData.close_approach_data?.[0]?.relative_velocity?.kilometers_per_hour;
+                        if (velocity) {
+                            document.getElementById('infoVelocity').textContent = `${Number(parseFloat(velocity).toFixed(0)).toLocaleString()} km/h`;
+                        }
+                    }
+                } else {
+                    // Load sample data for demo mode
+                    document.getElementById('asteroidTitle').textContent = 'Sample Asteroid Orbit';
+                    document.getElementById('infoSma').textContent = `${asteroidOrbitalParams.sma.toFixed(4)} AU`;
+                    document.getElementById('infoEcc').textContent = asteroidOrbitalParams.ecc.toFixed(6);
+                    document.getElementById('infoInc').textContent = `${asteroidOrbitalParams.inc.toFixed(4)}°`;
+                    document.getElementById('infoPeriod').textContent = `${asteroidOrbitalParams.period.toFixed(2)} days`;
+                    document.getElementById('infoVelocity').textContent = '45,320 km/h';
+                }
+                
+                document.getElementById('loadingStatus').textContent = 'Creating 3D visualization...';
+                
+                // Create asteroid after data loaded
+                createAsteroid();
+                
+                // Hide loading overlay
+                setTimeout(() => {
+                    document.getElementById('loadingOverlay').style.display = 'none';
+                }, 500);
+                
+            } catch (error) {
+                console.error('Error loading asteroid:', error);
+                document.getElementById('asteroidTitle').textContent = 'Sample Orbit (Demo)';
+                createAsteroid();
+                document.getElementById('loadingOverlay').style.display = 'none';
+            }
+        }
+        
+        // Animation loop
+        let time = 0;
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            if (isPlaying) {
+                time += animationSpeed;
+                updateEarthPosition(time);
+                updateAsteroidPosition(time);
+            }
+            
+            // Follow mode
+            if (followMode && asteroid) {
+                camera.position.copy(asteroid.position).add(new THREE.Vector3(10, 10, 10));
+                controls.target.copy(asteroid.position);
+            }
+            
+            controls.update();
+            renderer.render(scene, camera);
+        }
+        
+        // Window resize
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+        
+        // Keyboard controls
+        function onKeyDown(event) {
+            switch (event.key.toLowerCase()) {
+                case ' ':
+                    event.preventDefault();
+                    toggleAnimation();
+                    break;
+                case 'r':
+                    resetCamera();
+                    break;
+                case 'f':
+                    toggleFullscreen();
+                    break;
+                case '1':
+                    setView('top');
+                    break;
+                case '2':
+                    setView('side');
+                    break;
+                case '3':
+                    setView('follow');
+                    break;
+            }
+        }
+        
+        // Mouse move for tooltips
+        function onMouseMove(event) {
+            // Raycasting for hover tooltips could be added here
+        }
+        
+        // Toggle animation
+        function toggleAnimation() {
+            isPlaying = !isPlaying;
+            const btn = document.getElementById('playBtn');
+            const icon = document.getElementById('playIcon');
+            
+            if (isPlaying) {
+                icon.innerHTML = '<path d="M6 4h4v16H6zM14 4h4v16h-4z"/>';
+                btn.querySelector('span').textContent = 'Pause';
+            } else {
+                icon.innerHTML = '<path d="M8 5v14l11-7z"/>';
+                btn.querySelector('span').textContent = 'Play';
+            }
+        }
+        
+        // Update speed
+        function updateSpeed(value) {
+            animationSpeed = parseFloat(value);
+            document.getElementById('speedValue').textContent = `${animationSpeed.toFixed(1)}x`;
+        }
+        
+        // Zoom controls
+        function zoomIn() {
+            camera.position.multiplyScalar(0.8);
+        }
+        
+        function zoomOut() {
+            camera.position.multiplyScalar(1.2);
+        }
+        
+        // View presets
+        function setView(type) {
+            followMode = false;
+            
+            switch (type) {
+                case 'top':
+                    camera.position.set(0, 200, 0);
+                    controls.target.set(0, 0, 0);
+                    break;
+                case 'side':
+                    camera.position.set(200, 0, 0);
+                    controls.target.set(0, 0, 0);
+                    break;
+                case 'follow':
+                    followMode = true;
+                    break;
+            }
+        }
+        
+        // Reset camera
+        function resetCamera() {
+            followMode = false;
+            camera.position.set(0, 100, 150);
+            controls.target.set(0, 0, 0);
+        }
+        
+        // Toggle fullscreen
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                document.exitFullscreen();
+            }
+        }
+        
+        // Toggle orbits visibility
+        function toggleOrbits() {
+            const show = document.getElementById('showOrbits').checked;
+            if (earthOrbit) earthOrbit.visible = show;
+            if (asteroidOrbit) asteroidOrbit.visible = show;
+        }
+        
+        // Toggle labels visibility
+        function toggleLabels() {
+            // Labels could be implemented with CSS2DRenderer
+        }
+        
+        // Toggle help modal
+        function toggleHelp() {
+            const modal = document.getElementById('helpModal');
+            modal.classList.toggle('hidden');
+            modal.classList.toggle('flex');
+        }
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            init();
+            loadAsteroidData();
+        });
+    </script>
+</body>
+</html>

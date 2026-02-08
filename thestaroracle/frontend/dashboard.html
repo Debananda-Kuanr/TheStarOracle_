@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - The Star Oracle</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 50%, #16213e 100%);
+        }
+        
+        .font-poppins { font-family: 'Poppins', sans-serif; }
+        
+        /* Gradient Text */
+        .gradient-text {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        /* Glassmorphism */
+        .glass {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        
+        /* Neon Effects */
+        .neon-indigo {
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.3), inset 0 0 20px rgba(102, 126, 234, 0.1);
+        }
+        
+        .neon-red {
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.3), inset 0 0 20px rgba(239, 68, 68, 0.1);
+        }
+        
+        .neon-green {
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.3), inset 0 0 20px rgba(16, 185, 129, 0.1);
+        }
+        
+        .neon-purple {
+            box-shadow: 0 0 20px rgba(139, 92, 246, 0.3), inset 0 0 20px rgba(139, 92, 246, 0.1);
+        }
+        
+        .neon-orange {
+            box-shadow: 0 0 20px rgba(251, 146, 60, 0.3), inset 0 0 20px rgba(251, 146, 60, 0.1);
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            background: linear-gradient(180deg, rgba(15, 15, 26, 0.98) 0%, rgba(26, 26, 46, 0.98) 100%);
+            border-right: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        
+        .nav-item {
+            transition: all 0.3s ease;
+        }
+        
+        .nav-item:hover, .nav-item.active {
+            background: rgba(102, 126, 234, 0.15);
+            border-left: 3px solid #667eea;
+        }
+        
+        /* Table Styles */
+        .data-table {
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+        
+        .data-table th {
+            background: rgba(102, 126, 234, 0.1);
+            border-bottom: 1px solid rgba(102, 126, 234, 0.3);
+        }
+        
+        .data-table tr:hover {
+            background: rgba(255, 255, 255, 0.03);
+        }
+        
+        /* Status Badges */
+        .badge-safe {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+        
+        .badge-hazardous {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            animation: pulse-red 2s infinite;
+        }
+        
+        @keyframes pulse-red {
+            0%, 100% { box-shadow: 0 0 5px rgba(239, 68, 68, 0.5); }
+            50% { box-shadow: 0 0 15px rgba(239, 68, 68, 0.8); }
+        }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.03);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: rgba(102, 126, 234, 0.5);
+            border-radius: 3px;
+        }
+        
+        /* Loading Animation */
+        .skeleton {
+            background: linear-gradient(90deg, rgba(255,255,255,0.05) 25%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.05) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+        }
+        
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        
+        /* Refresh Animation */
+        .refresh-spin {
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="min-h-screen text-white">
+    <div class="flex">
+        <!-- Sidebar -->
+        <aside class="sidebar fixed left-0 top-0 h-full w-64 z-40">
+            <div class="p-6">
+                <!-- Logo -->
+                <a href="index.html" class="flex items-center space-x-3 mb-8">
+                    <div class="w-10 h-10 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 flex items-center justify-center">
+                        <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
+                        </svg>
+                    </div>
+                    <span class="text-lg font-poppins font-bold gradient-text">STAR ORACLE</span>
+                </a>
+                
+                <!-- Navigation -->
+                <nav class="space-y-2">
+                    <a href="dashboard.html" class="nav-item active flex items-center space-x-3 px-4 py-3 rounded-lg text-white">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
+                        </svg>
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="live-feed.html" class="nav-item flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-400 hover:text-white">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                        </svg>
+                        <span>Live Feed</span>
+                    </a>
+                    <a href="risk-analysis.html" class="nav-item flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-400 hover:text-white">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                        </svg>
+                        <span>Risk Analysis</span>
+                    </a>
+                    <a href="alerts.html" class="nav-item flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-400 hover:text-white">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                        </svg>
+                        <span>Alerts</span>
+                        <span class="ml-auto bg-red-500 text-xs px-2 py-0.5 rounded-full" id="alertCount">0</span>
+                    </a>
+                    <a href="orbit-3d.html" class="nav-item flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-400 hover:text-white">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/>
+                        </svg>
+                        <span>3D Orbits</span>
+                    </a>
+                </nav>
+                
+                <!-- Bottom Section -->
+                <div class="absolute bottom-6 left-6 right-6">
+                    <div class="glass rounded-lg p-4 mb-4">
+                        <p class="text-xs text-gray-400 mb-2">Data Source</p>
+                        <div class="flex items-center space-x-2">
+                            <div class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
+                            <span class="text-sm text-green-400">NASA NeoWs API</span>
+                        </div>
+                    </div>
+                    
+                    <button id="logoutBtn" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-400 hover:text-red-400 hover:bg-red-500/10 transition">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                        </svg>
+                        <span>Logout</span>
+                    </button>
+                </div>
+            </div>
+        </aside>
+        
+        <!-- Main Content -->
+        <main class="ml-64 flex-1 p-8">
+            <!-- Header -->
+            <header class="flex items-center justify-between mb-8">
+                <div>
+                    <h1 class="text-3xl font-poppins font-bold mb-1">
+                        Welcome back, <span id="userName" class="gradient-text">Explorer</span>
+                    </h1>
+                    <p class="text-gray-400">Here's what's happening in our cosmic neighborhood</p>
+                </div>
+                
+                <div class="flex items-center space-x-4">
+                    <!-- Refresh Button -->
+                    <button id="refreshBtn" class="glass p-3 rounded-lg hover:bg-white/10 transition" title="Refresh Data">
+                        <svg id="refreshIcon" class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                        </svg>
+                    </button>
+                    
+                    <!-- Role Badge -->
+                    <div id="roleBadge" class="glass px-4 py-2 rounded-full flex items-center space-x-2">
+                        <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                        </svg>
+                        <span id="roleText" class="text-sm text-indigo-400 font-semibold">USER</span>
+                    </div>
+                    
+                    <!-- Date -->
+                    <div class="glass px-4 py-2 rounded-lg">
+                        <p class="text-sm text-gray-400" id="currentDate"></p>
+                    </div>
+                </div>
+            </header>
+            
+            <!-- Stats Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <!-- Asteroids Today -->
+                <div class="glass rounded-xl p-6 neon-indigo">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="w-12 h-12 rounded-lg bg-indigo-500/20 flex items-center justify-center">
+                            <svg class="w-6 h-6 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>
+                            </svg>
+                        </div>
+                        <span class="text-xs text-indigo-400 bg-indigo-500/20 px-2 py-1 rounded">Today</span>
+                    </div>
+                    <h3 class="text-3xl font-poppins font-bold text-white mb-1" id="totalAsteroids">--</h3>
+                    <p class="text-gray-400 text-sm">Asteroids Detected</p>
+                </div>
+                
+                <!-- Hazardous -->
+                <div class="glass rounded-xl p-6 neon-red">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="w-12 h-12 rounded-lg bg-red-500/20 flex items-center justify-center">
+                            <svg class="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                            </svg>
+                        </div>
+                        <span class="text-xs text-red-400 bg-red-500/20 px-2 py-1 rounded animate-pulse">ALERT</span>
+                    </div>
+                    <h3 class="text-3xl font-poppins font-bold text-white mb-1" id="hazardousCount">--</h3>
+                    <p class="text-gray-400 text-sm">Potentially Hazardous</p>
+                </div>
+                
+                <!-- Closest Asteroid -->
+                <div class="glass rounded-xl p-6 neon-green">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="w-12 h-12 rounded-lg bg-green-500/20 flex items-center justify-center">
+                            <svg class="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <h3 class="text-2xl font-poppins font-bold text-white mb-1" id="closestDistance">--</h3>
+                    <p class="text-gray-400 text-sm" id="closestName">Closest Approach</p>
+                </div>
+                
+                <!-- Fastest Asteroid -->
+                <div class="glass rounded-xl p-6 neon-orange">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="w-12 h-12 rounded-lg bg-orange-500/20 flex items-center justify-center">
+                            <svg class="w-6 h-6 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <h3 class="text-2xl font-poppins font-bold text-white mb-1" id="fastestVelocity">--</h3>
+                    <p class="text-gray-400 text-sm" id="fastestName">Highest Velocity</p>
+                </div>
+            </div>
+            
+            <!-- Main Content Grid -->
+            <div class="grid lg:grid-cols-3 gap-6">
+                <!-- Live Asteroid Feed -->
+                <div class="lg:col-span-2 glass rounded-xl p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-xl font-poppins font-bold flex items-center space-x-2">
+                            <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
+                            <span>Live Asteroid Feed</span>
+                        </h2>
+                        <a href="live-feed.html" class="text-indigo-400 hover:text-indigo-300 text-sm transition">View All →</a>
+                    </div>
+                    
+                    <div class="overflow-x-auto">
+                        <table class="data-table w-full">
+                            <thead>
+                                <tr>
+                                    <th class="text-left py-3 px-4 text-sm font-semibold text-indigo-400 rounded-tl-lg">Name</th>
+                                    <th class="text-left py-3 px-4 text-sm font-semibold text-indigo-400">Velocity (km/h)</th>
+                                    <th class="text-left py-3 px-4 text-sm font-semibold text-indigo-400">Distance (km)</th>
+                                    <th class="text-left py-3 px-4 text-sm font-semibold text-indigo-400 rounded-tr-lg">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="asteroidTable">
+                                <!-- Loading skeleton -->
+                                <tr>
+                                    <td colspan="4" class="py-8 text-center text-gray-500">
+                                        <div class="flex items-center justify-center space-x-2">
+                                            <svg class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
+                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                                            </svg>
+                                            <span>Loading asteroid data...</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- Side Panel -->
+                <div class="space-y-6">
+                    <!-- Watchlist -->
+                    <div class="glass rounded-xl p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h2 class="text-lg font-poppins font-bold">Watchlist</h2>
+                            <span id="watchlistCount" class="text-sm text-gray-400">0 items</span>
+                        </div>
+                        <div id="watchlist" class="space-y-3">
+                            <p class="text-gray-500 text-sm text-center py-4">No asteroids in watchlist</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Recent Alerts -->
+                    <div class="glass rounded-xl p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h2 class="text-lg font-poppins font-bold">Recent Alerts</h2>
+                            <a href="alerts.html" class="text-indigo-400 hover:text-indigo-300 text-sm">View All</a>
+                        </div>
+                        <div id="recentAlerts" class="space-y-3">
+                            <div class="flex items-start space-x-3 p-3 rounded-lg bg-red-500/10 border border-red-500/30">
+                                <div class="w-2 h-2 rounded-full bg-red-400 mt-2"></div>
+                                <div>
+                                    <p class="text-sm text-white">Hazardous objects detected</p>
+                                    <p class="text-xs text-gray-400">Check the live feed for details</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Quick Actions -->
+                    <div class="glass rounded-xl p-6">
+                        <h2 class="text-lg font-poppins font-bold mb-4">Quick Actions</h2>
+                        <div class="space-y-3">
+                            <a href="risk-analysis.html" class="flex items-center space-x-3 p-3 rounded-lg bg-purple-500/10 hover:bg-purple-500/20 transition">
+                                <svg class="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                                </svg>
+                                <span class="text-sm">View Risk Analysis</span>
+                            </a>
+                            <a href="orbit-3d.html" class="flex items-center space-x-3 p-3 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 transition">
+                                <svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/>
+                                </svg>
+                                <span class="text-sm">Explore 3D Orbits</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <script>
+        // Check authentication - prevent back button after logout
+        (function() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.replace('index.html');
+                return;
+            }
+            // Prevent caching
+            window.history.pushState(null, '', window.location.href);
+            window.onpopstate = function() {
+                if (!localStorage.getItem('token')) {
+                    window.location.replace('index.html');
+                } else {
+                    window.history.pushState(null, '', window.location.href);
+                }
+            };
+        })();
+        
+        const token = localStorage.getItem('token');
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        
+        // Update UI with user info
+        document.getElementById('userName').textContent = user.name || 'Explorer';
+        document.getElementById('roleText').textContent = (user.role || 'user').toUpperCase();
+        
+        // Set current date
+        const now = new Date();
+        document.getElementById('currentDate').textContent = now.toLocaleDateString('en-US', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+        
+        // Fetch asteroid data
+        async function fetchAsteroidData() {
+            const refreshIcon = document.getElementById('refreshIcon');
+            refreshIcon.classList.add('refresh-spin');
+            
+            try {
+                const response = await fetch('../backend/api/asteroids.php');
+                const data = await response.json();
+                
+                if (data.success) {
+                    updateDashboard(data);
+                }
+            } catch (error) {
+                console.error('Error fetching asteroid data:', error);
+                // Show demo data if API fails
+                showDemoData();
+            } finally {
+                refreshIcon.classList.remove('refresh-spin');
+            }
+        }
+        
+        // Fetch watchlist from database
+        async function loadWatchlist() {
+            const watchlistDiv = document.getElementById('watchlist');
+            const countElement = document.getElementById('watchlistCount');
+            
+            try {
+                const response = await fetch('../backend/api/watchlist.php?action=list', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                const data = await response.json();
+                
+                if (data.success && Array.isArray(data.data)) {
+                    const items = data.data;
+                    countElement.textContent = `${items.length} item${items.length !== 1 ? 's' : ''}`;
+                    
+                    if (items.length === 0) {
+                        watchlistDiv.innerHTML = '<p class="text-gray-500 text-sm text-center py-4">No asteroids in watchlist</p>';
+                        return;
+                    }
+                    
+                    watchlistDiv.innerHTML = items.slice(0, 5).map(item => {
+                        const id = item.asteroid_id || item.id;
+                        const name = item.asteroid_name || item.name || 'Unknown';
+                        return `
+                            <div class="flex items-center justify-between p-3 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 cursor-pointer transition border border-indigo-500/20" onclick="window.location.href='asteroid-detail.html?id=${id}'">
+                                <div class="flex items-center space-x-3 flex-1 min-w-0">
+                                    <div class="w-2 h-2 rounded-full bg-indigo-400 flex-shrink-0"></div>
+                                    <p class="text-sm font-medium truncate">${name}</p>
+                                </div>
+                                <svg class="w-4 h-4 text-gray-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                                </svg>
+                            </div>
+                        `;
+                    }).join('');
+                    
+                    if (items.length > 5) {
+                        watchlistDiv.innerHTML += `
+                            <a href="alerts.html" class="block text-center text-sm text-indigo-400 hover:text-indigo-300 py-2">
+                                View all ${items.length} items →
+                            </a>
+                        `;
+                    }
+                } else {
+                    throw new Error('Failed to load watchlist');
+                }
+            } catch (error) {
+                console.warn('Watchlist API error, trying localStorage:', error);
+                // Fallback to localStorage
+                const watchlist = JSON.parse(localStorage.getItem('watchlist') || '[]');
+                countElement.textContent = `${watchlist.length} item${watchlist.length !== 1 ? 's' : ''}`;
+                
+                if (watchlist.length === 0) {
+                    watchlistDiv.innerHTML = '<p class="text-gray-500 text-sm text-center py-4">No asteroids in watchlist</p>';
+                } else {
+                    watchlistDiv.innerHTML = watchlist.slice(0, 5).map(item => {
+                        const id = item.asteroid_id || item.id;
+                        const name = item.asteroid_name || item.name || 'Unknown';
+                        return `
+                            <div class="flex items-center justify-between p-3 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 cursor-pointer transition border border-indigo-500/20" onclick="window.location.href='asteroid-detail.html?id=${id}'">
+                                <div class="flex items-center space-x-3 flex-1 min-w-0">
+                                    <div class="w-2 h-2 rounded-full bg-indigo-400 flex-shrink-0"></div>
+                                    <p class="text-sm font-medium truncate">${name}</p>
+                                </div>
+                                <svg class="w-4 h-4 text-gray-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                                </svg>
+                            </div>
+                        `;
+                    }).join('');
+                }
+            }
+        }
+        
+        function updateDashboard(data) {
+            // Update stats
+            document.getElementById('totalAsteroids').textContent = data.stats.total_count;
+            document.getElementById('hazardousCount').textContent = data.stats.hazardous_count;
+            document.getElementById('alertCount').textContent = data.stats.hazardous_count;
+            
+            if (data.stats.closest_asteroid) {
+                const distance = (data.stats.closest_asteroid.distance_km / 1000000).toFixed(2);
+                document.getElementById('closestDistance').textContent = `${distance}M km`;
+                document.getElementById('closestName').textContent = data.stats.closest_asteroid.name;
+            }
+            
+            if (data.stats.fastest_asteroid) {
+                const velocity = Math.round(data.stats.fastest_asteroid.velocity_kmh).toLocaleString();
+                document.getElementById('fastestVelocity').textContent = `${velocity} km/h`;
+                document.getElementById('fastestName').textContent = data.stats.fastest_asteroid.name;
+            }
+            
+            // Update table
+            const tbody = document.getElementById('asteroidTable');
+            tbody.innerHTML = '';
+            
+            const displayAsteroids = data.asteroids.slice(0, 8);
+            
+            displayAsteroids.forEach(asteroid => {
+                const row = document.createElement('tr');
+                row.className = 'border-b border-gray-800 hover:bg-white/5 cursor-pointer';
+                row.onclick = () => window.location.href = `asteroid-detail.html?id=${asteroid.id}`;
+                
+                const velocity = asteroid.close_approach ? Math.round(asteroid.close_approach.velocity_kmh).toLocaleString() : 'N/A';
+                const distance = asteroid.close_approach ? Math.round(asteroid.close_approach.distance_km).toLocaleString() : 'N/A';
+                const statusClass = asteroid.is_hazardous ? 'badge-hazardous' : 'badge-safe';
+                const statusText = asteroid.is_hazardous ? 'HAZARDOUS' : 'SAFE';
+                
+                row.innerHTML = `
+                    <td class="py-3 px-4">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-8 h-8 rounded-full ${asteroid.is_hazardous ? 'bg-red-500/20' : 'bg-indigo-500/20'} flex items-center justify-center">
+                                <svg class="w-4 h-4 ${asteroid.is_hazardous ? 'text-red-400' : 'text-indigo-400'}" fill="currentColor" viewBox="0 0 24 24">
+                                    <circle cx="12" cy="12" r="10"/>
+                                </svg>
+                            </div>
+                            <span class="font-medium">${asteroid.name}</span>
+                        </div>
+                    </td>
+                    <td class="py-3 px-4 text-gray-300">${velocity}</td>
+                    <td class="py-3 px-4 text-gray-300">${distance}</td>
+                    <td class="py-3 px-4">
+                        <span class="${statusClass} text-xs px-2 py-1 rounded-full">${statusText}</span>
+                    </td>
+                `;
+                
+                tbody.appendChild(row);
+            });
+        }
+        
+        function showDemoData() {
+            document.getElementById('totalAsteroids').textContent = '24';
+            document.getElementById('hazardousCount').textContent = '3';
+            document.getElementById('alertCount').textContent = '3';
+            document.getElementById('closestDistance').textContent = '1.2M km';
+            document.getElementById('closestName').textContent = '2024 AA1';
+            document.getElementById('fastestVelocity').textContent = '85,000 km/h';
+            document.getElementById('fastestName').textContent = '2024 AB2';
+            const tbody = document.getElementById('asteroidTable');
+            tbody.innerHTML = `
+                <tr class="border-b border-gray-800">
+                    <td class="py-3 px-4">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-8 h-8 rounded-full bg-red-500/20 flex items-center justify-center">
+                                <svg class="w-4 h-4 text-red-400" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/></svg>
+                            </div>
+                            <span class="font-medium">(2024 AA1)</span>
+                        </div>
+                    </td>
+                    <td class="py-3 px-4 text-gray-300">85,234</td>
+                    <td class="py-3 px-4 text-gray-300">1,234,567</td>
+                    <td class="py-3 px-4"><span class="badge-hazardous text-xs px-2 py-1 rounded-full">HAZARDOUS</span></td>
+                </tr>
+                <tr class="border-b border-gray-800">
+                    <td class="py-3 px-4">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-8 h-8 rounded-full bg-indigo-500/20 flex items-center justify-center">
+                                <svg class="w-4 h-4 text-indigo-400" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/></svg>
+                            </div>
+                            <span class="font-medium">(2024 AB2)</span>
+                        </div>
+                    </td>
+                    <td class="py-3 px-4 text-gray-300">62,145</td>
+                    <td class="py-3 px-4 text-gray-300">4,567,890</td>
+                    <td class="py-3 px-4"><span class="badge-safe text-xs px-2 py-1 rounded-full">SAFE</span></td>
+                </tr>
+                <tr class="border-b border-gray-800">
+                    <td class="py-3 px-4">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-8 h-8 rounded-full bg-indigo-500/20 flex items-center justify-center">
+                                <svg class="w-4 h-4 text-indigo-400" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/></svg>
+                            </div>
+                            <span class="font-medium">(2024 AC3)</span>
+                        </div>
+                    </td>
+                    <td class="py-3 px-4 text-gray-300">45,678</td>
+                    <td class="py-3 px-4 text-gray-300">7,890,123</td>
+                    <td class="py-3 px-4"><span class="badge-safe text-xs px-2 py-1 rounded-full">SAFE</span></td>
+                </tr>
+            `;
+        }
+        
+        // Refresh button
+        document.getElementById('refreshBtn').addEventListener('click', fetchAsteroidData);
+        
+        // Logout
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            // Fire-and-forget server logout
+            fetch('../backend/api/logout.php', {
+                method: 'POST',
+                headers: { 'Authorization': 'Bearer ' + token }
+            }).catch(() => {});
+            
+            localStorage.clear();
+            sessionStorage.clear();
+            window.location.replace('index.html');
+        });
+        
+        // Initialize
+        fetchAsteroidData();
+        loadWatchlist();
+
+        // Auto-refresh asteroid data and watchlist every 5 minutes
+        setInterval(() => {
+            fetchAsteroidData();
+            loadWatchlist();
+        }, 300000);
+    </script>
+</body>
+</html>

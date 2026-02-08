@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Risk Analysis - The Star Oracle</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Poppins', sans-serif; background: #0a0a1a; }
+        .font-poppins { font-family: 'Poppins', sans-serif; }
+        .gradient-text { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .glass { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .sidebar { background: linear-gradient(180deg, rgba(10, 10, 26, 0.95) 0%, rgba(26, 26, 58, 0.95) 100%); border-right: 1px solid rgba(255, 255, 255, 0.1); }
+        .nav-item { transition: all 0.3s ease; }
+        .nav-item:hover, .nav-item.active { background: rgba(102, 126, 234, 0.1); border-left: 3px solid #667eea; }
+        
+        /* ── Risk Gauge (semi-circle arc) ── */
+        .gauge-wrapper { display: flex; flex-direction: column; align-items: center; }
+        .gauge-container {
+            position: relative;
+            width: 260px;
+            height: 130px;
+            overflow: hidden;
+        }
+        /* Full 260px circle – only the top half is visible */
+        .gauge-bg {
+            width: 260px;
+            height: 260px;
+            border-radius: 50%;
+            /* Start at 9-o'clock (270deg) → green-left to red-right across the top arc */
+            background: conic-gradient(
+                from 270deg,
+                #00ff88 0deg,
+                #a3e635 36deg,
+                #ffd93d 72deg,
+                #ff9500 108deg,
+                #ff6b6b 144deg,
+                #ff4757 180deg,
+                transparent 180deg
+            );
+        }
+        /* Inner mask: semi-circle dome cutting the centre → leaves the arc ring */
+        .gauge-mask {
+            position: absolute;
+            bottom: 0;
+            left: 30px;
+            width: 200px;
+            height: 100px;
+            background: #0f0f23;
+            border-radius: 200px 200px 0 0;
+        }
+        /* Needle pivots from its bottom (= centre of the semicircle) */
+        .gauge-needle {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            margin-left: -2px;
+            width: 4px;
+            height: 100px;
+            background: linear-gradient(to top, #fff 0%, rgba(255,255,255,.3) 100%);
+            transform-origin: bottom center;
+            border-radius: 2px;
+            transition: transform 1.2s cubic-bezier(.4,2,.55,.44);
+            z-index: 3;
+        }
+        .gauge-center {
+            position: absolute;
+            bottom: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 18px;
+            height: 18px;
+            background: radial-gradient(circle, #fff 40%, #667eea 100%);
+            border-radius: 50%;
+            z-index: 4;
+            box-shadow: 0 0 12px rgba(102,126,234,.6);
+        }
+        /* Tick marks around the arc */
+        .gauge-ticks {
+            position: absolute;
+            bottom: 0; left: 50%;
+            width: 0; height: 0;
+            z-index: 2;
+        }
+        .gauge-ticks span {
+            position: absolute;
+            bottom: 0; left: 0;
+            width: 2px; height: 10px;
+            background: rgba(255,255,255,.25);
+            transform-origin: bottom center;
+            border-radius: 1px;
+        }
+
+        /* Heat Map Cell */
+        .heat-cell { transition: all 0.3s ease; }
+        .heat-cell:hover { transform: scale(1.15); z-index: 10; box-shadow: 0 0 12px rgba(255,255,255,.15); }
+        
+        /* Category Badges */
+        .cat-safe { background: rgba(0, 255, 136, 0.2); color: #00ff88; border: 1px solid rgba(0, 255, 136, 0.3); }
+        .cat-low { background: rgba(255, 217, 61, 0.2); color: #ffd93d; border: 1px solid rgba(255, 217, 61, 0.3); }
+        .cat-medium { background: rgba(255, 149, 0, 0.2); color: #ff9500; border: 1px solid rgba(255, 149, 0, 0.3); }
+        .cat-high { background: rgba(255, 107, 107, 0.2); color: #ff6b6b; border: 1px solid rgba(255, 107, 107, 0.3); }
+        .cat-hazardous { background: rgba(255, 71, 87, 0.2); color: #ff4757; border: 1px solid rgba(255, 71, 87, 0.3); animation: pulse-danger 2s infinite; }
+        
+        @keyframes pulse-danger { 0%, 100% { box-shadow: 0 0 10px rgba(255, 71, 87, 0.5); } 50% { box-shadow: 0 0 25px rgba(255, 71, 87, 0.8); } }
+
+        /* Risk score colour utility */
+        .risk-safe      { color: #00ff88; }
+        .risk-low       { color: #ffd93d; }
+        .risk-medium    { color: #ff9500; }
+        .risk-high      { color: #ff6b6b; }
+        .risk-critical  { color: #ff4757; }
+    </style>
+</head>
+<body class="min-h-screen text-white">
+    <div class="flex">
+        <!-- Sidebar -->
+        <aside class="sidebar fixed left-0 top-0 h-full w-64 z-40">
+            <div class="p-6">
+                <a href="index.html" class="flex items-center space-x-3 mb-8">
+                    <div class="w-10 h-10 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 flex items-center justify-center">
+                        <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
+                    </div>
+                    <span class="text-lg font-poppins font-bold gradient-text">STAR ORACLE</span>
+                </a>
+                
+                <nav class="space-y-2">
+                    <a href="dashboard.html" class="nav-item flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-400 hover:text-white">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="live-feed.html" class="nav-item flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-400 hover:text-white">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                        <span>Live Feed</span>
+                    </a>
+                    <a href="risk-analysis.html" class="nav-item active flex items-center space-x-3 px-4 py-3 rounded-lg text-white">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                        <span>Risk Analysis</span>
+                    </a>
+                    <a href="alerts.html" class="nav-item flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-400 hover:text-white">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+                        <span>Alerts</span>
+                    </a>
+                    <a href="orbit-3d.html" class="nav-item flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-400 hover:text-white">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/></svg>
+                        <span>3D Orbits</span>
+                    </a>
+                </nav>
+                
+                <div class="absolute bottom-6 left-6 right-6">
+                    <button id="logoutBtn" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-400 hover:text-red-400 hover:bg-red-500/10 transition">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                        <span>Logout</span>
+                    </button>
+                </div>
+            </div>
+        </aside>
+        
+        <!-- Main Content -->
+        <main class="ml-64 flex-1 p-8">
+            <header class="mb-8">
+                <h1 class="text-3xl font-poppins font-bold mb-1">Risk Analysis Dashboard</h1>
+                <p class="text-gray-400">Advanced threat assessment and risk visualization</p>
+            </header>
+            
+            <!-- Risk Overview Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
+                <div class="glass rounded-xl p-4 text-center">
+                    <div class="w-12 h-12 rounded-full bg-green-500/20 flex items-center justify-center mx-auto mb-2">
+                        <svg class="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                    </div>
+                    <p class="text-2xl font-poppins font-bold text-green-400" id="safeCount">--</p>
+                    <p class="text-sm text-gray-400">Safe</p>
+                </div>
+                <div class="glass rounded-xl p-4 text-center">
+                    <div class="w-12 h-12 rounded-full bg-yellow-500/20 flex items-center justify-center mx-auto mb-2">
+                        <span class="text-yellow-400 text-xl">!</span>
+                    </div>
+                    <p class="text-2xl font-poppins font-bold text-yellow-400" id="lowCount">--</p>
+                    <p class="text-sm text-gray-400">Low Risk</p>
+                </div>
+                <div class="glass rounded-xl p-4 text-center">
+                    <div class="w-12 h-12 rounded-full bg-orange-500/20 flex items-center justify-center mx-auto mb-2">
+                        <span class="text-orange-400 text-xl">!!</span>
+                    </div>
+                    <p class="text-2xl font-poppins font-bold text-orange-400" id="mediumCount">--</p>
+                    <p class="text-sm text-gray-400">Medium Risk</p>
+                </div>
+                <div class="glass rounded-xl p-4 text-center">
+                    <div class="w-12 h-12 rounded-full bg-red-400/20 flex items-center justify-center mx-auto mb-2">
+                        <svg class="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                    </div>
+                    <p class="text-2xl font-poppins font-bold text-red-400" id="highCount">--</p>
+                    <p class="text-sm text-gray-400">High Risk</p>
+                </div>
+                <div class="glass rounded-xl p-4 text-center border border-red-500/50">
+                    <div class="w-12 h-12 rounded-full bg-red-500/20 flex items-center justify-center mx-auto mb-2 animate-pulse">
+                        <svg class="w-6 h-6 text-red-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
+                    </div>
+                    <p class="text-2xl font-poppins font-bold text-red-500" id="hazardousCount">--</p>
+                    <p class="text-sm text-gray-400">Hazardous</p>
+                </div>
+            </div>
+            
+            <div class="grid lg:grid-cols-2 gap-6 mb-8">
+                <!-- Risk Score Gauge -->
+                <div class="glass rounded-xl p-6">
+                    <h2 class="text-xl font-poppins font-bold mb-6">Overall Risk Level</h2>
+
+                    <div class="gauge-wrapper">
+                        <div class="gauge-container">
+                            <div class="gauge-bg"></div>
+                            <div class="gauge-mask"></div>
+                            <!-- 11 tick marks at 0°–180° (every 18°) mapped to -90° → +90° -->
+                            <div class="gauge-ticks" id="gaugeTicks"></div>
+                            <div class="gauge-needle" id="gaugeNeedle" style="transform: rotate(-90deg);"></div>
+                            <div class="gauge-center"></div>
+                        </div>
+
+                        <!-- Numeric readout -->
+                        <div class="text-center mt-4">
+                            <p class="text-5xl font-poppins font-extrabold tracking-tight" id="overallRisk">--</p>
+                            <p class="text-sm uppercase tracking-widest mt-1" id="riskLabel">Calculating…</p>
+                        </div>
+
+                        <!-- Arc labels -->
+                        <div class="flex justify-between w-full max-w-[260px] mt-4 text-xs font-semibold">
+                            <span class="text-green-400">0 – Safe</span>
+                            <span class="text-yellow-400">Low</span>
+                            <span class="text-orange-400">Med</span>
+                            <span class="text-red-400">High</span>
+                            <span class="text-red-500">100 – Critical</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Distance vs Velocity Chart -->
+                <div class="glass rounded-xl p-6">
+                    <h2 class="text-xl font-poppins font-bold mb-6">Distance vs Velocity Analysis</h2>
+                    <canvas id="scatterChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- Risk Heat Map -->
+            <div class="glass rounded-xl p-6 mb-8">
+                <h2 class="text-xl font-poppins font-bold mb-6">Risk Heat Map</h2>
+                <div class="overflow-x-auto">
+                    <div id="heatMap" class="grid grid-cols-10 gap-2 min-w-[600px]">
+                        <!-- Heat map cells will be generated by JS -->
+                    </div>
+                </div>
+                <div class="flex justify-center mt-4 space-x-4 text-sm">
+                    <div class="flex items-center space-x-2"><div class="w-4 h-4 rounded bg-green-500"></div><span class="text-gray-400">Safe</span></div>
+                    <div class="flex items-center space-x-2"><div class="w-4 h-4 rounded bg-yellow-500"></div><span class="text-gray-400">Low</span></div>
+                    <div class="flex items-center space-x-2"><div class="w-4 h-4 rounded bg-orange-500"></div><span class="text-gray-400">Medium</span></div>
+                    <div class="flex items-center space-x-2"><div class="w-4 h-4 rounded bg-red-400"></div><span class="text-gray-400">High</span></div>
+                    <div class="flex items-center space-x-2"><div class="w-4 h-4 rounded bg-red-600"></div><span class="text-gray-400">Hazardous</span></div>
+                </div>
+            </div>
+            
+            <!-- High Risk Objects List -->
+            <div class="glass rounded-xl p-6">
+                <h2 class="text-xl font-poppins font-bold mb-6">High Risk Objects</h2>
+                <div id="highRiskList" class="space-y-4">
+                    <p class="text-gray-500 text-center py-8">Loading risk data...</p>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <script>
+        // Auth check with back button prevention
+        if (!localStorage.getItem('token')) {
+            window.location.replace('index.html');
+        } else {
+            window.history.pushState(null, '', window.location.href);
+            window.onpopstate = function() {
+                if (!localStorage.getItem('token')) {
+                    window.location.replace('index.html');
+                } else {
+                    window.history.pushState(null, '', window.location.href);
+                }
+            };
+        }
+        
+        let scatterChart = null;
+
+        // Generate tick marks around the gauge arc
+        (function buildTicks() {
+            const container = document.getElementById('gaugeTicks');
+            for (let i = 0; i <= 10; i++) {
+                const tick = document.createElement('span');
+                const deg = -90 + i * 18; // -90° to +90°
+                tick.style.transform = `rotate(${deg}deg)`;
+                tick.style.height = (i % 5 === 0) ? '14px' : '8px';
+                tick.style.opacity = (i % 5 === 0) ? '0.5' : '0.2';
+                container.appendChild(tick);
+            }
+        })();
+
+        function riskColor(score) {
+            if (score <= 20) return '#00ff88';
+            if (score <= 40) return '#ffd93d';
+            if (score <= 60) return '#ff9500';
+            if (score <= 80) return '#ff6b6b';
+            return '#ff4757';
+        }
+        function riskClass(score) {
+            if (score <= 20) return 'risk-safe';
+            if (score <= 40) return 'risk-low';
+            if (score <= 60) return 'risk-medium';
+            if (score <= 80) return 'risk-high';
+            return 'risk-critical';
+        }
+        
+        async function fetchData() {
+            try {
+                const response = await fetch('../backend/api/asteroids.php');
+                const data = await response.json();
+                if (data.success) updateDashboard(data.asteroids);
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+        
+        function updateDashboard(asteroids) {
+            // Count by risk category
+            let safe = 0, low = 0, medium = 0, high = 0, hazardous = 0;
+            let totalRisk = 0;
+            
+            asteroids.forEach(a => {
+                totalRisk += a.risk_score;
+                if (a.risk_score <= 20) safe++;
+                else if (a.risk_score <= 40) low++;
+                else if (a.risk_score <= 60) medium++;
+                else if (a.risk_score <= 80) high++;
+                else hazardous++;
+            });
+            
+            document.getElementById('safeCount').textContent = safe;
+            document.getElementById('lowCount').textContent = low;
+            document.getElementById('mediumCount').textContent = medium;
+            document.getElementById('highCount').textContent = high;
+            document.getElementById('hazardousCount').textContent = hazardous;
+            
+            // Update gauge
+            const avgRisk = asteroids.length > 0 ? totalRisk / asteroids.length : 0;
+            const rotation = (avgRisk / 100) * 180 - 90;  // -90° (left/safe) → +90° (right/critical)
+            document.getElementById('gaugeNeedle').style.transform = `rotate(${rotation}deg)`;
+
+            const riskEl = document.getElementById('overallRisk');
+            riskEl.textContent = Math.round(avgRisk);
+            riskEl.style.color = riskColor(avgRisk);
+            
+            let label = 'Safe';
+            if (avgRisk > 80) label = 'Critical';
+            else if (avgRisk > 60) label = 'High Risk';
+            else if (avgRisk > 40) label = 'Medium Risk';
+            else if (avgRisk > 20) label = 'Low Risk';
+
+            const labelEl = document.getElementById('riskLabel');
+            labelEl.textContent = label;
+            labelEl.className = `text-sm uppercase tracking-widest mt-1 ${riskClass(avgRisk)}`;
+            
+            // Scatter chart
+            const ctx = document.getElementById('scatterChart').getContext('2d');
+            if (scatterChart) scatterChart.destroy();
+            
+            const scatterData = asteroids.filter(a => a.close_approach).map(a => ({
+                x: a.close_approach.distance_km / 1000000,
+                y: a.close_approach.velocity_kmh / 1000,
+                r: Math.max(5, a.risk_score / 10),
+                backgroundColor: a.is_hazardous ? 'rgba(255, 71, 87, 0.7)' : 'rgba(0, 212, 255, 0.7)'
+            }));
+            
+            scatterChart = new Chart(ctx, {
+                type: 'bubble',
+                data: {
+                    datasets: [{
+                        label: 'Asteroids',
+                        data: scatterData,
+                        backgroundColor: scatterData.map(d => d.backgroundColor)
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { title: { display: true, text: 'Distance (million km)', color: '#9ca3af' }, grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#9ca3af' } },
+                        y: { title: { display: true, text: 'Velocity (thousand km/h)', color: '#9ca3af' }, grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#9ca3af' } }
+                    }
+                }
+            });
+            
+            // Heat map
+            const heatMap = document.getElementById('heatMap');
+            heatMap.innerHTML = '';
+            asteroids.slice(0, 50).forEach(a => {
+                const cell = document.createElement('div');
+                let bgColor = 'bg-green-500';
+                if (a.risk_score > 80) bgColor = 'bg-red-600';
+                else if (a.risk_score > 60) bgColor = 'bg-red-400';
+                else if (a.risk_score > 40) bgColor = 'bg-orange-500';
+                else if (a.risk_score > 20) bgColor = 'bg-yellow-500';
+                
+                cell.className = `heat-cell ${bgColor} w-12 h-12 rounded-lg flex items-center justify-center cursor-pointer`;
+                cell.title = `${a.name}\nRisk: ${a.risk_score}`;
+                cell.innerHTML = `<span class="text-xs font-bold">${a.risk_score}</span>`;
+                cell.onclick = () => window.location.href = `asteroid-detail.html?id=${a.id}`;
+                heatMap.appendChild(cell);
+            });
+            
+            // High risk list
+            const highRisk = asteroids.filter(a => a.risk_score > 60).sort((a, b) => b.risk_score - a.risk_score);
+            const highRiskList = document.getElementById('highRiskList');
+            
+            if (highRisk.length === 0) {
+                highRiskList.innerHTML = '<p class="text-green-400 text-center py-8">No high-risk objects detected!</p>';
+            } else {
+                highRiskList.innerHTML = highRisk.map(a => {
+                    const catClass = a.risk_score > 80 ? 'cat-hazardous' : 'cat-high';
+                    const catText = a.risk_score > 80 ? 'HAZARDOUS' : 'HIGH RISK';
+                    return `
+                        <div class="flex items-center justify-between p-4 rounded-lg bg-red-500/10 border border-red-500/30 cursor-pointer hover:bg-red-500/20" onclick="window.location.href='asteroid-detail.html?id=${a.id}'">
+                            <div class="flex items-center space-x-4">
+                                <div class="w-12 h-12 rounded-full bg-red-500/20 flex items-center justify-center">
+                                    <span class="text-lg font-poppins font-bold text-red-400">${a.risk_score}</span>
+                                </div>
+                                <div>
+                                    <p class="font-semibold text-white">${a.name}</p>
+                                    <p class="text-sm text-gray-400">Distance: ${a.close_approach ? (a.close_approach.distance_km / 1000000).toFixed(2) + 'M km' : 'N/A'}</p>
+                                </div>
+                            </div>
+                            <span class="${catClass} text-xs px-3 py-1 rounded-full">${catText}</span>
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+        
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            localStorage.clear();
+            sessionStorage.clear();
+            window.location.replace('index.html');
+        });
+        
+        fetchData();
+    </script>
+</body>
+</html>

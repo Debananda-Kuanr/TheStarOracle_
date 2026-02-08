@@ -1,0 +1,1463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Researcher Panel - The Star Oracle</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Poppins:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #060612;
+            --bg-panel: rgba(10, 10, 30, 0.85);
+            --border: rgba(100, 220, 255, 0.12);
+            --cyan: #00e5ff;
+            --purple: #a855f7;
+            --red: #ff4444;
+            --yellow: #fbbf24;
+            --green: #22c55e;
+            --orange: #f97316;
+            --text-dim: #7a8ba0;
+            --mono: 'JetBrains Mono', monospace;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: var(--bg-dark);
+            color: #e0e6ed;
+            overflow-x: hidden;
+            font-size: 15px;
+        }
+        .font-orbitron { font-family: 'Orbitron', sans-serif; }
+        .font-mono { font-family: var(--mono); }
+
+        /* ---- GRID LAYOUT ---- */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 300px;
+            grid-template-rows: auto;
+            gap: 12px;
+            padding: 12px;
+            min-height: calc(100vh - 60px);
+        }
+        .panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            backdrop-filter: blur(6px);
+        }
+        .panel-head {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.8rem;
+            font-weight: 600;
+            letter-spacing: 1.2px;
+            text-transform: uppercase;
+            color: var(--cyan);
+            flex-shrink: 0;
+            background: rgba(0,229,255,0.03);
+        }
+        .panel-head svg { width: 16px; height: 16px; flex-shrink: 0; }
+        .panel-body {
+            padding: 14px 16px;
+            flex: 1;
+            overflow-y: auto;
+            font-size: 0.92rem;
+        }
+        .panel-body::-webkit-scrollbar { width: 4px; }
+        .panel-body::-webkit-scrollbar-thumb { background: rgba(0,229,255,0.2); border-radius: 4px; }
+
+        /* ---- TOP BAR ---- */
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 20px;
+            background: rgba(6,6,18,0.95);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            height: 60px;
+        }
+        .top-bar .brand { display: flex; align-items: center; gap: 10px; }
+        .top-bar .brand img, .top-bar .brand .logo-icon {
+            width: 34px; height: 34px; border-radius: 50%;
+        }
+        .logo-icon {
+            background: linear-gradient(135deg, var(--purple), #d946ef);
+            display: flex; align-items: center; justify-content: center;
+        }
+        .status-row { display: flex; align-items: center; gap: 16px; font-size: 0.85rem; }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+        .dot-green { background: var(--green); box-shadow: 0 0 6px var(--green); }
+        .dot-yellow { background: var(--yellow); box-shadow: 0 0 6px var(--yellow); }
+        .dot-red { background: var(--red); box-shadow: 0 0 6px var(--red); }
+
+        /* Badge & Utility */
+        .badge {
+            display: inline-flex; align-items: center; gap: 5px;
+            padding: 3px 10px; border-radius: 9999px;
+            font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px;
+        }
+        .badge-cyan  { background: rgba(0,229,255,0.15); color: var(--cyan); border: 1px solid rgba(0,229,255,0.25); }
+        .badge-green { background: rgba(34,197,94,0.15); color: var(--green); border: 1px solid rgba(34,197,94,0.25); }
+        .badge-red   { background: rgba(255,68,68,0.15); color: var(--red); border: 1px solid rgba(255,68,68,0.25); }
+        .badge-yellow{ background: rgba(251,191,36,0.15); color: var(--yellow); border: 1px solid rgba(251,191,36,0.25); }
+        .badge-purple{ background: rgba(168,85,247,0.15); color: var(--purple); border: 1px solid rgba(168,85,247,0.25); }
+        .badge-orange{ background: rgba(249,115,22,0.15); color: var(--orange); border: 1px solid rgba(249,115,22,0.25); }
+
+        /* Terminal feed */
+        .terminal {
+            background: rgba(0,0,0,0.5);
+            border: 1px solid rgba(0,229,255,0.08);
+            border-radius: 8px;
+            padding: 10px 12px;
+            font-family: var(--mono);
+            font-size: 0.82rem;
+            line-height: 1.7;
+            max-height: 340px;
+            overflow-y: auto;
+            color: #b0bfce;
+        }
+        .terminal .t-cyan  { color: var(--cyan); }
+        .terminal .t-green { color: var(--green); }
+        .terminal .t-red   { color: var(--red); }
+        .terminal .t-yellow{ color: var(--yellow); }
+        .terminal .t-purple{ color: var(--purple); }
+        .terminal .t-dim   { color: #4a5568; }
+
+        /* Scientific table */
+        .sci-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        .sci-table th {
+            text-align: left; padding: 9px 12px;
+            background: rgba(0,229,255,0.06);
+            color: var(--text-dim);
+            font-weight: 600; font-size: 0.75rem;
+            text-transform: uppercase; letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--border);
+        }
+        .sci-table td {
+            padding: 9px 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+        }
+        .sci-table tr:hover { background: rgba(0,229,255,0.04); }
+
+        /* Buttons */
+        .btn-sm {
+            padding: 7px 14px; border-radius: 6px;
+            font-size: 0.8rem; font-weight: 600;
+            cursor: pointer; border: none;
+            transition: all 0.2s;
+        }
+        .btn-cyan  { background: rgba(0,229,255,0.15); color: var(--cyan); border: 1px solid rgba(0,229,255,0.3); }
+        .btn-cyan:hover  { background: rgba(0,229,255,0.25); }
+        .btn-purple{ background: rgba(168,85,247,0.15); color: var(--purple); border: 1px solid rgba(168,85,247,0.3); }
+        .btn-purple:hover{ background: rgba(168,85,247,0.25); }
+        .btn-red   { background: rgba(255,68,68,0.15); color: var(--red); border: 1px solid rgba(255,68,68,0.3); }
+        .btn-red:hover   { background: rgba(255,68,68,0.25); }
+        .btn-green { background: rgba(34,197,94,0.15); color: var(--green); border: 1px solid rgba(34,197,94,0.3); }
+        .btn-green:hover { background: rgba(34,197,94,0.25); }
+        .btn-orange{ background: rgba(249,115,22,0.15); color: var(--orange); border: 1px solid rgba(249,115,22,0.3); }
+        .btn-orange:hover{ background: rgba(249,115,22,0.25); }
+
+        /* Inputs */
+        .input-dark {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 9px 12px;
+            color: #e0e6ed;
+            font-size: 0.88rem;
+            width: 100%;
+            outline: none;
+            font-family: 'Poppins', sans-serif;
+        }
+        .input-dark:focus { border-color: var(--cyan); box-shadow: 0 0 8px rgba(0,229,255,0.15); }
+        .input-dark::placeholder { color: #4a5568; }
+        textarea.input-dark { resize: vertical; min-height: 70px; }
+        select.input-dark { cursor: pointer; }
+
+        /* Spinner */
+        .spinner-sm {
+            display: inline-block; width: 16px; height: 16px;
+            border: 2px solid rgba(0,229,255,0.2);
+            border-top-color: var(--cyan);
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Pulse glow */
+        @keyframes pulseGlow {
+            0%,100% { box-shadow: 0 0 4px rgba(0,229,255,0.2); }
+            50% { box-shadow: 0 0 12px rgba(0,229,255,0.4); }
+        }
+
+        /* Chart container */
+        .chart-box { position: relative; width: 100%; height: 220px; }
+
+        /* Note card */
+        .note-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px 14px;
+            margin-bottom: 10px;
+        }
+        .note-card:hover { border-color: rgba(0,229,255,0.25); }
+
+        /* Sidebar specific */
+        .sidebar-panel { grid-row: span 3; }
+
+        /* Toast */
+        .toast {
+            position: fixed; bottom: 20px; right: 20px;
+            padding: 14px 22px; border-radius: 10px;
+            font-size: 0.9rem; font-weight: 500;
+            z-index: 999; opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.3s;
+            max-width: 340px;
+        }
+        .toast.show { opacity: 1; transform: translateY(0); }
+        .toast-success { background: rgba(34,197,94,0.9); color: #fff; }
+        .toast-error   { background: rgba(255,68,68,0.9); color: #fff; }
+        .toast-info    { background: rgba(0,229,255,0.9); color: #000; }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .dashboard-grid { grid-template-columns: 1fr 1fr 300px; }
+        }
+        @media (max-width: 900px) {
+            .dashboard-grid { grid-template-columns: 1fr 1fr; }
+            .sidebar-panel { grid-column: span 2; grid-row: auto; }
+        }
+        @media (max-width: 640px) {
+            .dashboard-grid { grid-template-columns: 1fr; }
+            .sidebar-panel { grid-column: auto; }
+        }
+
+        /* Blinking cursor */
+        .blink { animation: blink 1s step-end infinite; }
+        @keyframes blink { 50% { opacity: 0; } }
+
+        /* Star background */
+        .star-bg { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
+        .star-bg .s {
+            position: absolute; width: 1px; height: 1px;
+            background: white; border-radius: 50%;
+            animation: twinkle 3s ease-in-out infinite;
+        }
+        @keyframes twinkle { 0%,100%{opacity:.2} 50%{opacity:1} }
+    </style>
+</head>
+<body>
+    <!-- Star background -->
+    <div class="star-bg" id="starBg"></div>
+
+    <!-- ======================= TOP BAR ======================= -->
+    <header class="top-bar">
+        <div class="brand">
+            <div class="logo-icon">
+                <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
+            </div>
+            <span class="font-orbitron text-sm font-bold tracking-wider" style="background:linear-gradient(135deg,#fff,#a855f7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">STAR ORACLE</span>
+            <span class="badge badge-purple">RESEARCHER</span>
+            <span class="badge badge-green" id="verifiedBadge" style="display:none;">
+                <svg width="10" height="10" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                VERIFIED
+            </span>
+        </div>
+        <div class="status-row">
+            <span class="text-gray-500 font-mono text-xs" id="headerResearchId">RSR---------</span>
+            <span class="flex items-center gap-1">
+                <span class="status-dot dot-green" id="sysStatusDot"></span>
+                <span class="text-xs" id="sysStatusText">Systems Online</span>
+            </span>
+            <span class="flex items-center gap-1" title="NASA API">
+                <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                <span class="text-xs" id="apiStatusText">API Active</span>
+            </span>
+            <span class="text-xs text-gray-500 font-mono" id="headerClock">--:--:--</span>
+            <span class="text-xs text-gray-400 hidden sm:inline" id="headerName">Researcher</span>
+            <button onclick="doLogout()" class="btn-sm btn-red ml-2" title="Logout">
+                <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+            </button>
+        </div>
+    </header>
+
+    <!-- ======================= DASHBOARD GRID ======================= -->
+    <main class="dashboard-grid">
+
+        <!-- ===== 1. LIVE TELEMETRY PANEL ===== -->
+        <div class="panel" style="grid-column: span 2;">
+            <div class="panel-head">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                Live Telemetry Feed
+                <span class="ml-auto flex items-center gap-1"><span class="status-dot dot-green"></span><span class="text-xs text-green-400 font-mono" id="telemetryStatus">STREAMING</span></span>
+            </div>
+            <div class="panel-body" style="padding:8px;">
+                <!-- Quick stats row -->
+                <div class="grid grid-cols-4 gap-2 mb-2">
+                    <div class="text-center p-2 rounded" style="background:rgba(0,229,255,0.06);border:1px solid rgba(0,229,255,0.1);">
+                        <div class="text-xs text-gray-500 uppercase tracking-wide">Tracked</div>
+                        <div class="text-lg font-bold font-mono" style="color:var(--cyan)" id="statTotal">--</div>
+                    </div>
+                    <div class="text-center p-2 rounded" style="background:rgba(255,68,68,0.06);border:1px solid rgba(255,68,68,0.1);">
+                        <div class="text-xs text-gray-500 uppercase tracking-wide">Hazardous</div>
+                        <div class="text-lg font-bold font-mono" style="color:var(--red)" id="statHazardous">--</div>
+                    </div>
+                    <div class="text-center p-2 rounded" style="background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.1);">
+                        <div class="text-xs text-gray-500 uppercase tracking-wide">Closest (km)</div>
+                        <div class="text-lg font-bold font-mono" style="color:var(--green)" id="statClosest">--</div>
+                    </div>
+                    <div class="text-center p-2 rounded" style="background:rgba(251,191,36,0.06);border:1px solid rgba(251,191,36,0.1);">
+                        <div class="text-xs text-gray-500 uppercase tracking-wide">Max Vel (km/h)</div>
+                        <div class="text-lg font-bold font-mono" style="color:var(--yellow)" id="statVelocity">--</div>
+                    </div>
+                </div>
+                <!-- Terminal feed -->
+                <div class="terminal" id="telemetryFeed">
+                    <div class="t-dim">// Initializing telemetry stream...</div>
+                    <div class="t-dim">// Connecting to NASA NeoWs API...</div>
+                    <div><span class="blink">_</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== 2. ORBITAL ANALYSIS PANEL ===== -->
+        <div class="panel">
+            <div class="panel-head">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                Orbital Analysis
+            </div>
+            <div class="panel-body">
+                <div class="text-xs text-gray-500 mb-2 uppercase tracking-wide">Close-Approach Distance Variance</div>
+                <div class="chart-box"><canvas id="orbitalChart"></canvas></div>
+                <div class="mt-3">
+                    <div class="text-xs text-gray-500 mb-1 uppercase tracking-wide">Approach Timeline</div>
+                    <div id="approachTimeline" class="space-y-1">
+                        <div class="text-xs text-gray-600 font-mono">Loading...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== SIDEBAR (Collaboration) ===== -->
+        <div class="panel sidebar-panel" style="grid-row: span 3;">
+            <div class="panel-head">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                Collaboration
+            </div>
+            <div class="panel-body" style="padding:10px;">
+                <!-- Research Notes -->
+                <div class="text-xs text-gray-500 uppercase tracking-wide mb-2 flex items-center justify-between">
+                    <span>Research Notes</span>
+                    <button onclick="toggleNoteForm()" class="btn-sm btn-cyan" style="padding:2px 8px;font-size:0.6rem;">+ New</button>
+                </div>
+                <!-- Note form (hidden) -->
+                <div id="noteForm" style="display:none;" class="mb-3 p-2 rounded" style="background:rgba(0,0,0,0.3);">
+                    <input type="text" id="noteAsteroidId" class="input-dark mb-1" placeholder="Asteroid ID">
+                    <input type="text" id="noteTitle" class="input-dark mb-1" placeholder="Note title">
+                    <textarea id="noteContent" class="input-dark mb-1" placeholder="Research observations..."></textarea>
+                    <div class="flex gap-1">
+                        <button onclick="saveNote()" class="btn-sm btn-green flex-1">Save</button>
+                        <button onclick="toggleNoteForm()" class="btn-sm btn-red">Cancel</button>
+                    </div>
+                </div>
+                <div id="notesList" class="space-y-1 mb-4" style="max-height:180px;overflow-y:auto;">
+                    <div class="text-xs text-gray-600 font-mono">Loading notes...</div>
+                </div>
+
+                <!-- Global Watchlist -->
+                <div class="text-xs text-gray-500 uppercase tracking-wide mb-2 mt-2 flex items-center justify-between">
+                    <span>Pinned Asteroids</span>
+                    <span class="badge badge-cyan" id="watchlistCount">0</span>
+                </div>
+                <div id="watchlistPanel" class="space-y-1" style="max-height:200px;overflow-y:auto;">
+                    <div class="text-xs text-gray-600 font-mono">Loading watchlist...</div>
+                </div>
+
+                <!-- Quick pin -->
+                <div class="mt-3 flex gap-1">
+                    <input type="text" id="pinAsteroidId" class="input-dark" placeholder="Asteroid ID" style="flex:1;">
+                    <button onclick="quickPin()" class="btn-sm btn-purple">Pin</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== 3. IMPACT PROBABILITY MATRIX ===== -->
+        <div class="panel">
+            <div class="panel-head">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                Impact Probability Matrix
+            </div>
+            <div class="panel-body" style="padding:6px 8px;">
+                <div class="text-xs text-gray-500 mb-1 uppercase tracking-wide">Palermo Scale Classification</div>
+                <div class="overflow-x-auto">
+                    <table class="sci-table" id="impactTable">
+                        <thead>
+                            <tr>
+                                <th>Asteroid</th>
+                                <th>Risk</th>
+                                <th>Palermo</th>
+                                <th>Hazard</th>
+                            </tr>
+                        </thead>
+                        <tbody id="impactTableBody">
+                            <tr><td colspan="4" class="text-center text-gray-600 font-mono text-xs">Loading matrix...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== 4. WHAT-IF SIMULATOR ===== -->
+        <div class="panel">
+            <div class="panel-head">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
+                What-If Simulator
+            </div>
+            <div class="panel-body">
+                <div class="text-xs text-gray-500 mb-2">Adjust trajectory parameters and predict orbital shift.</div>
+                <div class="space-y-2">
+                    <div>
+                        <label class="text-xs text-gray-400 block mb-1">Select Asteroid</label>
+                        <select id="simAsteroid" class="input-dark" onchange="populateSimDefaults()">
+                            <option value="">-- Load data first --</option>
+                        </select>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="text-xs text-gray-400 block mb-1">Velocity &Delta; (km/s)</label>
+                            <input type="number" id="simVelocity" class="input-dark" value="0" step="0.1">
+                        </div>
+                        <div>
+                            <label class="text-xs text-gray-400 block mb-1">Angle &Delta; (&deg;)</label>
+                            <input type="number" id="simAngle" class="input-dark" value="0" step="0.5">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="text-xs text-gray-400 block mb-1">Mass Factor</label>
+                            <input type="number" id="simMass" class="input-dark" value="1.0" step="0.1" min="0.1">
+                        </div>
+                        <div>
+                            <label class="text-xs text-gray-400 block mb-1">Time Offset (hrs)</label>
+                            <input type="number" id="simTime" class="input-dark" value="0" step="1">
+                        </div>
+                    </div>
+                    <button onclick="runSimulation()" class="btn-sm btn-purple w-full mt-1">
+                        <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24" class="inline mr-1"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/></svg>
+                        Run Simulation
+                    </button>
+                </div>
+                <!-- Results -->
+                <div id="simResults" class="mt-3 p-2 rounded text-xs font-mono hidden" style="background:rgba(0,0,0,0.4);border:1px solid var(--border);">
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== 5. OBSERVATION SCHEDULER ===== -->
+        <div class="panel">
+            <div class="panel-head">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                Observation Scheduler
+            </div>
+            <div class="panel-body">
+                <div class="text-xs text-gray-500 mb-2 uppercase tracking-wide">Tracking Windows &amp; Radar Visibility</div>
+                <div id="schedulerList" class="space-y-2">
+                    <div class="text-xs text-gray-600 font-mono">Calculating windows...</div>
+                </div>
+                <div class="mt-3">
+                    <div class="text-xs text-gray-500 mb-1 uppercase tracking-wide">Radar Station Coverage</div>
+                    <div class="chart-box" style="height:140px;"><canvas id="radarChart"></canvas></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== 6. RESEARCH DATA LAB ===== -->
+        <div class="panel" style="grid-column: span 2;">
+            <div class="panel-head">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"/></svg>
+                Research Data Lab
+                <span class="ml-auto flex gap-1">
+                    <button onclick="exportData('json')" class="btn-sm btn-cyan" style="padding:2px 8px;font-size:0.6rem;">Export JSON</button>
+                    <button onclick="exportData('csv')" class="btn-sm btn-green" style="padding:2px 8px;font-size:0.6rem;">Export CSV</button>
+                </span>
+            </div>
+            <div class="panel-body" style="padding:6px 8px;">
+                <div class="flex gap-2 mb-2 flex-wrap items-end">
+                    <div>
+                        <label class="text-xs text-gray-500 block mb-1">Start Date</label>
+                        <input type="date" id="labStartDate" class="input-dark" style="width:140px;">
+                    </div>
+                    <div>
+                        <label class="text-xs text-gray-500 block mb-1">End Date</label>
+                        <input type="date" id="labEndDate" class="input-dark" style="width:140px;">
+                    </div>
+                    <button onclick="loadLabData()" class="btn-sm btn-cyan">Load Data</button>
+                    <span class="text-xs text-gray-500 font-mono" id="labCount">0 records</span>
+                </div>
+                <!-- Spectral / composition table -->
+                <div class="overflow-x-auto" style="max-height:220px;">
+                    <table class="sci-table" id="labTable">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Hazardous</th>
+                                <th>Diameter (km)</th>
+                                <th>Velocity (km/h)</th>
+                                <th>Distance (km)</th>
+                                <th>Dist (lunar)</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="labTableBody">
+                            <tr><td colspan="8" class="text-center text-gray-600 font-mono text-xs">Select date range and load data</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <!-- Spectral composition chart -->
+                <div class="mt-3">
+                    <div class="text-xs text-gray-500 mb-1 uppercase tracking-wide">Spectral Composition Analysis</div>
+                    <div class="chart-box" style="height:160px;"><canvas id="spectralChart"></canvas></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== 7. SECURITY & SYSTEM PANEL ===== -->
+        <div class="panel">
+            <div class="panel-head">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                Security &amp; System
+            </div>
+            <div class="panel-body">
+                <!-- Session activity -->
+                <div class="text-xs text-gray-500 mb-2 uppercase tracking-wide">Session Activity</div>
+                <div id="sessionList" class="space-y-1 mb-3" style="max-height:130px;overflow-y:auto;">
+                    <div class="text-xs text-gray-600 font-mono">Loading sessions...</div>
+                </div>
+
+                <!-- Accessed Datasets -->
+                <div class="text-xs text-gray-500 mb-2 uppercase tracking-wide">Datasets Accessed</div>
+                <div id="datasetLog" class="terminal mb-3" style="max-height:90px;font-size:0.65rem;">
+                    <div class="t-dim">No datasets loaded yet.</div>
+                </div>
+
+                <!-- NASA API Key Manager -->
+                <div class="text-xs text-gray-500 mb-2 uppercase tracking-wide">NASA API Key Manager</div>
+                <div class="flex gap-1">
+                    <input type="password" id="apiKeyInput" class="input-dark" placeholder="Enter NASA API key" style="flex:1;">
+                    <button onclick="validateApiKey()" class="btn-sm btn-orange">Test</button>
+                </div>
+                <div id="apiKeyStatus" class="text-xs mt-1 text-gray-500"></div>
+                <div class="mt-2 text-xs">
+                    <span class="text-gray-500">Current key:</span>
+                    <span class="font-mono text-gray-400" id="currentApiKey">••••••••••</span>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Toast container -->
+    <div id="toast" class="toast"></div>
+
+    <!-- ======================= JAVASCRIPT ======================= -->
+    <script src="js/main.js"></script>
+    <script>
+    // =============================================
+    // GLOBALS
+    // =============================================
+    const API_BASE = '../backend/api';
+    let asteroidCache = [];
+    let researcherProfile = null;
+    let datasetAccessLog = [];
+
+    // =============================================
+    // INIT
+    // =============================================
+    document.addEventListener('DOMContentLoaded', () => {
+        // Auth check
+        if (!Auth.isAuthenticated()) {
+            window.location.replace('index.html');
+            return;
+        }
+        window.history.pushState(null, '', window.location.href);
+        window.onpopstate = function() {
+            if (!Auth.isAuthenticated()) {
+                window.location.replace('index.html');
+            } else {
+                window.history.pushState(null, '', window.location.href);
+            }
+        };
+        const user = Auth.getUser();
+        if (user && user.role !== 'researcher' && user.role !== 'admin') {
+            window.location.href = 'dashboard.html';
+            return;
+        }
+
+        createStarsBg();
+        setDefaultDates();
+        startClock();
+
+        // Load everything
+        loadProfile();
+        loadTelemetry();
+        loadNotes();
+        loadWatchlist();
+        loadSessions();
+        loadResearcherStats();
+
+        // Auto-refresh telemetry every 5 minutes
+        setInterval(loadTelemetry, 300000);
+    });
+
+    // =============================================
+    // STARS BACKGROUND
+    // =============================================
+    function createStarsBg() {
+        const bg = document.getElementById('starBg');
+        for (let i = 0; i < 120; i++) {
+            const s = document.createElement('div');
+            s.className = 's';
+            s.style.left = Math.random() * 100 + '%';
+            s.style.top = Math.random() * 100 + '%';
+            s.style.animationDelay = Math.random() * 3 + 's';
+            s.style.width = s.style.height = (Math.random() * 2 + 0.5) + 'px';
+            bg.appendChild(s);
+        }
+    }
+
+    // =============================================
+    // CLOCK
+    // =============================================
+    function startClock() {
+        const update = () => {
+            const now = new Date();
+            document.getElementById('headerClock').textContent = now.toUTCString().slice(-12, -4) + ' UTC';
+        };
+        update();
+        setInterval(update, 1000);
+    }
+
+    // =============================================
+    // SET DEFAULT DATES
+    // =============================================
+    function setDefaultDates() {
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('labStartDate').value = today;
+        document.getElementById('labEndDate').value = today;
+    }
+
+    // =============================================
+    // TOAST
+    // =============================================
+    function showToast(msg, type = 'info') {
+        const t = document.getElementById('toast');
+        t.textContent = msg;
+        t.className = 'toast toast-' + type + ' show';
+        setTimeout(() => t.classList.remove('show'), 3500);
+    }
+
+    // =============================================
+    // PROFILE
+    // =============================================
+    async function loadProfile() {
+        try {
+            const res = await API.get('/researcher.php?action=profile');
+            if (res.success) {
+                researcherProfile = res.data;
+                const u = res.data.user;
+                const r = res.data.researcher;
+                document.getElementById('headerName').textContent = u.name;
+                document.getElementById('headerResearchId').textContent = r.research_id;
+                if (u.verified) {
+                    document.getElementById('verifiedBadge').style.display = 'inline-flex';
+                }
+            }
+        } catch (e) {
+            console.error('Profile load error:', e);
+        }
+    }
+
+    // =============================================
+    // TELEMETRY (NASA Feed)
+    // =============================================
+    async function loadTelemetry() {
+        const feed = document.getElementById('telemetryFeed');
+        const ts = () => new Date().toLocaleTimeString('en-US', { hour12: false });
+
+        try {
+            document.getElementById('telemetryStatus').textContent = 'FETCHING';
+            appendTerminal(feed, `[${ts()}] <span class="t-cyan">SYS</span> Requesting NASA NeoWs feed...`);
+
+            const today = new Date().toISOString().split('T')[0];
+            const res = await fetch(`${API_BASE}/asteroids.php?start_date=${today}&end_date=${today}`);
+            const data = await res.json();
+
+            if (!data.success) throw new Error(data.error || 'API error');
+
+            asteroidCache = data.asteroids || [];
+            const stats = data.stats || {};
+
+            // Update stats
+            document.getElementById('statTotal').textContent = stats.total_count || 0;
+            document.getElementById('statHazardous').textContent = stats.hazardous_count || 0;
+            document.getElementById('statClosest').textContent = stats.closest_asteroid
+                ? Number(stats.closest_asteroid.distance_km).toLocaleString(undefined, { maximumFractionDigits: 0 })
+                : '--';
+            document.getElementById('statVelocity').textContent = stats.fastest_asteroid
+                ? Number(stats.fastest_asteroid.velocity_kmh).toLocaleString(undefined, { maximumFractionDigits: 0 })
+                : '--';
+
+            appendTerminal(feed, `[${ts()}] <span class="t-green">OK</span> Received ${stats.total_count || 0} NEOs for ${today}`);
+            appendTerminal(feed, `[${ts()}] <span class="t-red">WARN</span> ${stats.hazardous_count || 0} potentially hazardous asteroid(s) detected`);
+
+            // Stream individual asteroid data
+            asteroidCache.forEach((a, i) => {
+                setTimeout(() => {
+                    const hazTag = a.is_hazardous ? '<span class="t-red">HAZARDOUS</span>' : '<span class="t-green">SAFE</span>';
+                    const vel = a.close_approach ? Number(a.close_approach.velocity_kmh).toLocaleString(undefined, { maximumFractionDigits: 0 }) + ' km/h' : 'N/A';
+                    const dist = a.close_approach ? Number(a.close_approach.distance_km).toLocaleString(undefined, { maximumFractionDigits: 0 }) + ' km' : 'N/A';
+                    appendTerminal(feed, `[${ts()}] <span class="t-cyan">NEO</span> ${a.name} | ${hazTag} | V: ${vel} | D: ${dist} | Risk: <span class="t-yellow">${a.risk_score}/100</span>`);
+                }, i * 150);
+            });
+
+            document.getElementById('telemetryStatus').textContent = 'STREAMING';
+
+            // Populate other panels with this data
+            buildImpactMatrix(asteroidCache);
+            buildOrbitalChart(asteroidCache);
+            buildApproachTimeline(asteroidCache);
+            populateSimSelector(asteroidCache);
+            buildScheduler(asteroidCache);
+            logDataset(`NASA NeoWs Feed (${today})`);
+
+        } catch (e) {
+            appendTerminal(feed, `[${ts()}] <span class="t-red">ERR</span> ${e.message}`);
+            document.getElementById('telemetryStatus').textContent = 'ERROR';
+            document.getElementById('sysStatusDot').className = 'status-dot dot-red';
+            document.getElementById('sysStatusText').textContent = 'Feed Error';
+        }
+    }
+
+    function appendTerminal(el, html) {
+        // Remove blinking cursor
+        const blink = el.querySelector('.blink');
+        if (blink) blink.parentElement.remove();
+        const line = document.createElement('div');
+        line.innerHTML = html;
+        el.appendChild(line);
+        el.scrollTop = el.scrollHeight;
+    }
+
+    // =============================================
+    // IMPACT PROBABILITY MATRIX
+    // =============================================
+    function buildImpactMatrix(asteroids) {
+        const tbody = document.getElementById('impactTableBody');
+        if (!asteroids.length) {
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center text-gray-600 text-xs">No data</td></tr>';
+            return;
+        }
+        // Sort by risk
+        const sorted = [...asteroids].sort((a, b) => b.risk_score - a.risk_score).slice(0, 15);
+        tbody.innerHTML = sorted.map(a => {
+            const palermo = calculatePalermo(a);
+            const level = getRiskLevel(a.risk_score, a.is_hazardous);
+            const badgeCls = level === 'hazardous' ? 'badge-red' : level === 'high' ? 'badge-orange' : level === 'medium' ? 'badge-yellow' : 'badge-green';
+            const hazBadge = a.is_hazardous
+                ? '<span class="badge badge-red">PHA</span>'
+                : '<span class="badge badge-green">SAFE</span>';
+            return `<tr>
+                <td class="font-mono text-xs">${a.name.length > 18 ? a.name.slice(0,18) + '...' : a.name}</td>
+                <td><span class="badge ${badgeCls}">${a.risk_score}</span></td>
+                <td class="font-mono text-xs">${palermo}</td>
+                <td>${hazBadge}</td>
+            </tr>`;
+        }).join('');
+    }
+
+    function calculatePalermo(asteroid) {
+        if (!asteroid.close_approach) return 'N/A';
+        const dist = asteroid.close_approach.distance_km;
+        const diam = (asteroid.diameter.min_km + asteroid.diameter.max_km) / 2;
+        // Simplified Palermo-like scale calculation
+        const impactProb = Math.max(1e-12, (diam * 1000) / (dist + 1));
+        const bgRisk = 0.03 * Math.pow(diam, 2.6) / 100;
+        const palermo = Math.log10(impactProb / (bgRisk + 1e-15));
+        return palermo.toFixed(2);
+    }
+
+    function getRiskLevel(score, isHaz) {
+        if (isHaz || score >= 60) return 'hazardous';
+        if (score >= 40) return 'high';
+        if (score >= 25) return 'medium';
+        return 'low';
+    }
+
+    // =============================================
+    // ORBITAL ANALYSIS CHART
+    // =============================================
+    let orbitalChartInstance = null;
+    function buildOrbitalChart(asteroids) {
+        const ctx = document.getElementById('orbitalChart').getContext('2d');
+        if (orbitalChartInstance) orbitalChartInstance.destroy();
+
+        const sorted = [...asteroids]
+            .filter(a => a.close_approach)
+            .sort((a, b) => a.close_approach.distance_km - b.close_approach.distance_km)
+            .slice(0, 12);
+
+        orbitalChartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: sorted.map(a => a.name.replace(/[()]/g, '').slice(0, 10)),
+                datasets: [{
+                    label: 'Miss Distance (lunar)',
+                    data: sorted.map(a => a.close_approach.distance_lunar),
+                    backgroundColor: sorted.map(a => a.is_hazardous ? 'rgba(255,68,68,0.6)' : 'rgba(0,229,255,0.4)'),
+                    borderColor: sorted.map(a => a.is_hazardous ? '#ff4444' : '#00e5ff'),
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: 'rgba(6,6,18,0.95)',
+                        titleColor: '#00e5ff',
+                        bodyColor: '#e0e6ed',
+                        borderColor: 'rgba(0,229,255,0.2)',
+                        borderWidth: 1
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: { color: '#4a5568', font: { size: 9, family: 'JetBrains Mono' }, maxRotation: 45 },
+                        grid: { color: 'rgba(255,255,255,0.03)' }
+                    },
+                    y: {
+                        ticks: { color: '#4a5568', font: { size: 9, family: 'JetBrains Mono' } },
+                        grid: { color: 'rgba(255,255,255,0.03)' },
+                        title: { display: true, text: 'Lunar Distances', color: '#4a5568', font: { size: 9 } }
+                    }
+                }
+            }
+        });
+    }
+
+    // =============================================
+    // APPROACH TIMELINE
+    // =============================================
+    function buildApproachTimeline(asteroids) {
+        const el = document.getElementById('approachTimeline');
+        const sorted = [...asteroids]
+            .filter(a => a.close_approach)
+            .sort((a, b) => a.close_approach.distance_km - b.close_approach.distance_km)
+            .slice(0, 6);
+
+        if (!sorted.length) {
+            el.innerHTML = '<div class="text-xs text-gray-600 font-mono">No approach data</div>';
+            return;
+        }
+
+        el.innerHTML = sorted.map(a => {
+            const ca = a.close_approach;
+            const color = a.is_hazardous ? 'var(--red)' : 'var(--cyan)';
+            return `<div class="flex items-center gap-2 py-1" style="border-left:2px solid ${color};padding-left:8px;">
+                <div class="flex-1">
+                    <div class="text-xs font-mono" style="color:${color}">${a.name.slice(0, 20)}</div>
+                    <div class="text-xs text-gray-500">${ca.date} | ${Number(ca.distance_lunar).toFixed(2)} LD</div>
+                </div>
+                <span class="badge ${a.is_hazardous ? 'badge-red' : 'badge-green'}" style="font-size:0.55rem;">${a.risk_score}</span>
+            </div>`;
+        }).join('');
+    }
+
+    // =============================================
+    // WHAT-IF SIMULATOR
+    // =============================================
+    function populateSimSelector(asteroids) {
+        const sel = document.getElementById('simAsteroid');
+        sel.innerHTML = '<option value="">-- Select Asteroid --</option>' +
+            asteroids.map(a => `<option value="${a.id}" data-name="${a.name}">${a.name}</option>`).join('');
+    }
+
+    function populateSimDefaults() {
+        const sel = document.getElementById('simAsteroid');
+        const id = sel.value;
+        const ast = asteroidCache.find(a => a.id === id);
+        if (ast && ast.close_approach) {
+            document.getElementById('simVelocity').value = (ast.close_approach.velocity_kms * 0.01).toFixed(2);
+        }
+    }
+
+    function runSimulation() {
+        const id = document.getElementById('simAsteroid').value;
+        const ast = asteroidCache.find(a => a.id === id);
+        const out = document.getElementById('simResults');
+
+        if (!ast) {
+            showToast('Please select an asteroid first.', 'error');
+            return;
+        }
+
+        const dv = parseFloat(document.getElementById('simVelocity').value) || 0;
+        const da = parseFloat(document.getElementById('simAngle').value) || 0;
+        const mf = parseFloat(document.getElementById('simMass').value) || 1;
+        const dt = parseFloat(document.getElementById('simTime').value) || 0;
+
+        const ca = ast.close_approach || {};
+        const origDist = ca.distance_km || 1e7;
+        const origVel = ca.velocity_kms || 20;
+
+        // Simplified orbital perturbation model
+        const velPert = dv / (origVel + 0.001);
+        const angPert = Math.sin(da * Math.PI / 180);
+        const timePert = dt * 3600 * origVel;
+        const massEffect = Math.log(mf + 1);
+
+        const distShift = origDist * (velPert + angPert * 0.3 + massEffect * 0.1) + timePert;
+        const newDist = Math.max(0, origDist + distShift);
+        const newDistLunar = newDist / 384400;
+
+        const impactProb = Math.max(0, Math.min(100, (1 - newDist / origDist) * 50 + (ast.is_hazardous ? 20 : 0)));
+
+        const verdict = newDist < origDist
+            ? '<span class="t-red">CLOSER APPROACH - Increased risk</span>'
+            : '<span class="t-green">GREATER MISS DISTANCE - Risk reduced</span>';
+
+        out.classList.remove('hidden');
+        out.innerHTML = `
+            <div class="t-cyan mb-1">━━━ SIMULATION RESULT ━━━</div>
+            <div><span class="t-dim">Asteroid:</span> <span class="t-cyan">${ast.name}</span></div>
+            <div><span class="t-dim">Original dist:</span> ${Number(origDist).toLocaleString()} km</div>
+            <div><span class="t-dim">Adjusted dist:</span> <span class="${newDist < origDist ? 't-red' : 't-green'}">${Number(newDist).toLocaleString(undefined, {maximumFractionDigits:0})} km</span></div>
+            <div><span class="t-dim">New lunar dist:</span> ${newDistLunar.toFixed(3)} LD</div>
+            <div><span class="t-dim">Shift delta:</span> ${distShift > 0 ? '+' : ''}${Number(distShift).toLocaleString(undefined, {maximumFractionDigits:0})} km</div>
+            <div><span class="t-dim">Impact prob:</span> <span class="${impactProb > 30 ? 't-red' : 't-green'}">${impactProb.toFixed(4)}%</span></div>
+            <div class="mt-1">${verdict}</div>
+        `;
+    }
+
+    // =============================================
+    // OBSERVATION SCHEDULER
+    // =============================================
+    function buildScheduler(asteroids) {
+        const el = document.getElementById('schedulerList');
+        const hazardous = asteroids.filter(a => a.is_hazardous || a.risk_score > 30);
+        const targets = hazardous.length ? hazardous.slice(0, 5) : asteroids.slice(0, 5);
+
+        // Simulated radar stations
+        const stations = ['Goldstone DSN', 'Arecibo Legacy', 'Green Bank', 'Haystack LRDR', 'Canberra DSN'];
+
+        el.innerHTML = targets.map((a, i) => {
+            const ca = a.close_approach || {};
+            const station = stations[i % stations.length];
+            const windowStart = new Date();
+            windowStart.setHours(windowStart.getHours() + i * 3);
+            const windowEnd = new Date(windowStart);
+            windowEnd.setHours(windowEnd.getHours() + 4);
+            const startStr = windowStart.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+            const endStr = windowEnd.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+
+            return `<div class="p-2 rounded" style="background:rgba(0,0,0,0.3);border:1px solid var(--border);">
+                <div class="flex items-center justify-between mb-1">
+                    <span class="text-xs font-mono" style="color:var(--cyan)">${a.name.slice(0, 18)}</span>
+                    <span class="badge ${a.is_hazardous ? 'badge-red' : 'badge-cyan'}" style="font-size:0.55rem;">${a.is_hazardous ? 'PHA' : 'NEO'}</span>
+                </div>
+                <div class="text-xs text-gray-500">
+                    <span>Station: <span style="color:var(--yellow)">${station}</span></span> |
+                    <span>Window: <span class="font-mono">${startStr} — ${endStr} UTC</span></span>
+                </div>
+                <div class="mt-1 w-full rounded-full" style="height:3px;background:rgba(255,255,255,0.05);">
+                    <div class="rounded-full" style="height:100%;width:${30 + Math.random() * 60}%;background:linear-gradient(90deg,var(--cyan),var(--purple));"></div>
+                </div>
+            </div>`;
+        }).join('');
+
+        buildRadarChart(stations);
+    }
+
+    let radarChartInstance = null;
+    function buildRadarChart(stations) {
+        const ctx = document.getElementById('radarChart').getContext('2d');
+        if (radarChartInstance) radarChartInstance.destroy();
+        radarChartInstance = new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: stations,
+                datasets: [{
+                    label: 'Coverage %',
+                    data: stations.map(() => 40 + Math.floor(Math.random() * 55)),
+                    borderColor: 'rgba(0,229,255,0.7)',
+                    backgroundColor: 'rgba(0,229,255,0.1)',
+                    pointBackgroundColor: '#00e5ff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    r: {
+                        angleLines: { color: 'rgba(255,255,255,0.05)' },
+                        grid: { color: 'rgba(255,255,255,0.05)' },
+                        pointLabels: { color: '#4a5568', font: { size: 8, family: 'JetBrains Mono' } },
+                        ticks: { display: false },
+                        suggestedMin: 0, suggestedMax: 100
+                    }
+                }
+            }
+        });
+    }
+
+    // =============================================
+    // RESEARCH DATA LAB (Export)
+    // =============================================
+    async function loadLabData() {
+        const start = document.getElementById('labStartDate').value;
+        const end = document.getElementById('labEndDate').value;
+        if (!start || !end) { showToast('Select a date range', 'error'); return; }
+
+        const tbody = document.getElementById('labTableBody');
+        tbody.innerHTML = '<tr><td colspan="8" class="text-center text-xs"><span class="spinner-sm"></span> Fetching...</td></tr>';
+
+        try {
+            const res = await fetch(`${API_BASE}/asteroids.php?start_date=${start}&end_date=${end}`);
+            const data = await res.json();
+            if (!data.success) throw new Error(data.error);
+
+            const asteroids = data.asteroids || [];
+            document.getElementById('labCount').textContent = asteroids.length + ' records';
+            logDataset(`Data Lab Query (${start} to ${end})`);
+
+            if (!asteroids.length) {
+                tbody.innerHTML = '<tr><td colspan="8" class="text-center text-gray-600 text-xs">No results</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = asteroids.map(a => {
+                const ca = a.close_approach || {};
+                return `<tr>
+                    <td class="font-mono text-xs">${a.id}</td>
+                    <td class="text-xs">${a.name}</td>
+                    <td>${a.is_hazardous ? '<span class="badge badge-red" style="font-size:0.55rem;">YES</span>' : '<span class="badge badge-green" style="font-size:0.55rem;">NO</span>'}</td>
+                    <td class="font-mono text-xs">${((a.diameter.min_km + a.diameter.max_km) / 2).toFixed(4)}</td>
+                    <td class="font-mono text-xs">${ca.velocity_kmh ? Number(ca.velocity_kmh).toLocaleString(undefined,{maximumFractionDigits:0}) : 'N/A'}</td>
+                    <td class="font-mono text-xs">${ca.distance_km ? Number(ca.distance_km).toLocaleString(undefined,{maximumFractionDigits:0}) : 'N/A'}</td>
+                    <td class="font-mono text-xs">${ca.distance_lunar ? Number(ca.distance_lunar).toFixed(3) : 'N/A'}</td>
+                    <td>
+                        <button onclick="pinFromLab('${a.id}','${a.name.replace(/'/g, "\\'")}')" class="btn-sm btn-purple" style="padding:1px 6px;font-size:0.55rem;" title="Pin to watchlist">Pin</button>
+                    </td>
+                </tr>`;
+            }).join('');
+
+            buildSpectralChart(asteroids);
+
+        } catch (e) {
+            tbody.innerHTML = `<tr><td colspan="8" class="text-center text-red-400 text-xs">${e.message}</td></tr>`;
+        }
+    }
+
+    async function exportData(format) {
+        const start = document.getElementById('labStartDate').value;
+        const end = document.getElementById('labEndDate').value;
+        if (!start || !end) { showToast('Select a date range first', 'error'); return; }
+
+        try {
+            const token = Auth.getToken();
+            if (format === 'csv') {
+                // Direct download for CSV
+                const url = `${API_BASE}/researcher.php?action=export&format=csv&start_date=${start}&end_date=${end}`;
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `asteroids_${start}_${end}.csv`;
+
+                // Need to use fetch to add auth header
+                const res = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
+                const blob = await res.blob();
+                const blobUrl = URL.createObjectURL(blob);
+                a.href = blobUrl;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(blobUrl);
+                showToast('CSV exported successfully', 'success');
+            } else {
+                const res = await fetch(`${API_BASE}/researcher.php?action=export&format=json&start_date=${start}&end_date=${end}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+                const blob = new Blob([JSON.stringify(data.data, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `asteroids_${start}_${end}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                showToast('JSON exported successfully', 'success');
+            }
+            logDataset(`Export (${format.toUpperCase()}) ${start} to ${end}`);
+        } catch (e) {
+            showToast('Export failed: ' + e.message, 'error');
+        }
+    }
+
+    // =============================================
+    // SPECTRAL CHART (simulated composition)
+    // =============================================
+    let spectralChartInstance = null;
+    function buildSpectralChart(asteroids) {
+        const ctx = document.getElementById('spectralChart').getContext('2d');
+        if (spectralChartInstance) spectralChartInstance.destroy();
+
+        // Simulated spectral types
+        const types = { 'C-type (Carbon)': 0, 'S-type (Silicate)': 0, 'M-type (Metallic)': 0, 'V-type (Basaltic)': 0, 'X-type (Unknown)': 0 };
+        asteroids.forEach(a => {
+            const diam = (a.diameter.min_km + a.diameter.max_km) / 2;
+            if (diam > 0.5) types['M-type (Metallic)']++;
+            else if (diam > 0.2) types['S-type (Silicate)']++;
+            else if (diam > 0.05) types['C-type (Carbon)']++;
+            else if (a.is_hazardous) types['V-type (Basaltic)']++;
+            else types['X-type (Unknown)']++;
+        });
+
+        spectralChartInstance = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: Object.keys(types),
+                datasets: [{
+                    data: Object.values(types),
+                    backgroundColor: [
+                        'rgba(0,229,255,0.6)', 'rgba(168,85,247,0.6)',
+                        'rgba(251,191,36,0.6)', 'rgba(255,68,68,0.6)', 'rgba(100,116,139,0.6)'
+                    ],
+                    borderColor: 'rgba(6,6,18,0.9)',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: { color: '#7a8ba0', font: { size: 9, family: 'JetBrains Mono' }, boxWidth: 12, padding: 8 }
+                    }
+                }
+            }
+        });
+    }
+
+    // =============================================
+    // COLLABORATION: Notes
+    // =============================================
+    function toggleNoteForm() {
+        const form = document.getElementById('noteForm');
+        form.style.display = form.style.display === 'none' ? 'block' : 'none';
+    }
+
+    async function loadNotes() {
+        try {
+            const res = await API.get('/researcher.php?action=notes');
+            if (res.success) renderNotes(res.data);
+        } catch (e) {
+            console.error('Notes load error:', e);
+            document.getElementById('notesList').innerHTML = '<div class="text-xs text-gray-600 font-mono">Could not load notes</div>';
+        }
+    }
+
+    function renderNotes(notes) {
+        const el = document.getElementById('notesList');
+        if (!notes.length) {
+            el.innerHTML = '<div class="text-xs text-gray-500 italic">No research notes yet. Create one above.</div>';
+            return;
+        }
+        el.innerHTML = notes.map(n => `
+            <div class="note-card">
+                <div class="flex items-center justify-between mb-1">
+                    <span class="text-xs font-bold" style="color:var(--cyan)">${escHtml(n.title)}</span>
+                    <button onclick="deleteNote(${n.id})" class="text-red-500 hover:text-red-400" style="font-size:0.6rem;">&#10005;</button>
+                </div>
+                <div class="text-xs text-gray-400 font-mono mb-1">Asteroid: ${escHtml(n.asteroid_id)}</div>
+                <div class="text-xs text-gray-300">${escHtml(n.content).slice(0, 120)}${n.content.length > 120 ? '...' : ''}</div>
+                <div class="text-xs text-gray-600 mt-1 font-mono">${formatTimestamp(n.updated_at)}</div>
+            </div>
+        `).join('');
+    }
+
+    async function saveNote() {
+        const payload = {
+            asteroid_id: document.getElementById('noteAsteroidId').value.trim(),
+            title: document.getElementById('noteTitle').value.trim(),
+            content: document.getElementById('noteContent').value.trim()
+        };
+        if (!payload.asteroid_id || !payload.title || !payload.content) {
+            showToast('Fill all note fields', 'error');
+            return;
+        }
+        try {
+            await API.post('/researcher.php?action=notes', payload);
+            showToast('Note saved', 'success');
+            document.getElementById('noteAsteroidId').value = '';
+            document.getElementById('noteTitle').value = '';
+            document.getElementById('noteContent').value = '';
+            toggleNoteForm();
+            loadNotes();
+        } catch (e) {
+            showToast('Failed to save note: ' + e.message, 'error');
+        }
+    }
+
+    async function deleteNote(noteId) {
+        if (!confirm('Delete this note?')) return;
+        try {
+            const res = await fetch(`${API_BASE}/researcher.php?action=notes`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${Auth.getToken()}`
+                },
+                body: JSON.stringify({ note_id: noteId })
+            });
+            const data = await res.json();
+            if (data.success) {
+                showToast('Note deleted', 'success');
+                loadNotes();
+            } else {
+                throw new Error(data.error);
+            }
+        } catch (e) {
+            showToast('Delete failed: ' + e.message, 'error');
+        }
+    }
+
+    // =============================================
+    // COLLABORATION: Watchlist
+    // =============================================
+    async function loadWatchlist() {
+        try {
+            const res = await API.get('/researcher.php?action=watchlist');
+            if (res.success) renderWatchlist(res.data);
+        } catch (e) {
+            console.error('Watchlist load error:', e);
+        }
+    }
+
+    function renderWatchlist(items) {
+        const el = document.getElementById('watchlistPanel');
+        document.getElementById('watchlistCount').textContent = items.length;
+        if (!items.length) {
+            el.innerHTML = '<div class="text-xs text-gray-500 italic">No pinned asteroids. Use the Pin button below.</div>';
+            return;
+        }
+        el.innerHTML = items.map(w => `
+            <div class="flex items-center gap-2 p-2 rounded" style="background:rgba(0,0,0,0.3);border:1px solid var(--border);">
+                <div class="flex-1">
+                    <div class="text-xs font-mono" style="color:var(--purple)">${escHtml(w.asteroid_name)}</div>
+                    <div class="text-xs text-gray-600 font-mono">${escHtml(w.asteroid_id)} | ${formatTimestamp(w.added_at)}</div>
+                    ${w.notes_count > 0 ? `<div class="text-xs text-gray-500">${w.notes_count} note(s)</div>` : ''}
+                </div>
+                <button onclick="removeFromWatchlist('${w.asteroid_id}')" class="text-red-500 hover:text-red-400" style="font-size:0.65rem;" title="Unpin">&#10005;</button>
+            </div>
+        `).join('');
+    }
+
+    async function quickPin() {
+        const id = document.getElementById('pinAsteroidId').value.trim();
+        if (!id) { showToast('Enter an asteroid ID', 'error'); return; }
+
+        // Try to find name in cache
+        const cached = asteroidCache.find(a => a.id === id);
+        const name = cached ? cached.name : `NEO-${id}`;
+
+        try {
+            await fetch(`${API_BASE}/researcher.php?action=watchlist`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${Auth.getToken()}`
+                },
+                body: JSON.stringify({ asteroid_id: id, asteroid_name: name })
+            });
+            document.getElementById('pinAsteroidId').value = '';
+            showToast('Asteroid pinned', 'success');
+            loadWatchlist();
+        } catch (e) {
+            showToast('Pin failed', 'error');
+        }
+    }
+
+    function pinFromLab(id, name) {
+        document.getElementById('pinAsteroidId').value = id;
+        fetch(`${API_BASE}/researcher.php?action=watchlist`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${Auth.getToken()}`
+            },
+            body: JSON.stringify({ asteroid_id: id, asteroid_name: name })
+        }).then(() => {
+            showToast(`Pinned ${name}`, 'success');
+            loadWatchlist();
+        }).catch(() => showToast('Pin failed', 'error'));
+    }
+
+    async function removeFromWatchlist(asteroidId) {
+        try {
+            await fetch(`${API_BASE}/researcher.php?action=watchlist`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${Auth.getToken()}`
+                },
+                body: JSON.stringify({ asteroid_id: asteroidId })
+            });
+            showToast('Removed from watchlist', 'success');
+            loadWatchlist();
+        } catch (e) {
+            showToast('Remove failed', 'error');
+        }
+    }
+
+    // =============================================
+    // SECURITY: Sessions
+    // =============================================
+    async function loadSessions() {
+        try {
+            const res = await API.get('/researcher.php?action=sessions');
+            if (res.success) renderSessions(res.data);
+        } catch (e) {
+            console.error('Sessions load error:', e);
+        }
+    }
+
+    function renderSessions(sessions) {
+        const el = document.getElementById('sessionList');
+        if (!sessions.length) {
+            el.innerHTML = '<div class="text-xs text-gray-600 font-mono">No active sessions</div>';
+            return;
+        }
+        el.innerHTML = sessions.slice(0, 8).map((s, i) => {
+            const isCurrent = i === 0;
+            return `<div class="flex items-center gap-2 py-1" style="border-left:2px solid ${isCurrent ? 'var(--green)' : 'var(--border)'};padding-left:8px;">
+                <div class="flex-1">
+                    <div class="text-xs font-mono" style="color:${isCurrent ? 'var(--green)' : '#7a8ba0'}">${s.ip_address || 'Unknown IP'}${isCurrent ? ' (current)' : ''}</div>
+                    <div class="text-xs text-gray-600 font-mono">${formatTimestamp(s.created_at)}</div>
+                </div>
+                <span class="badge ${new Date(s.expires_at) > new Date() ? 'badge-green' : 'badge-red'}" style="font-size:0.5rem;">${new Date(s.expires_at) > new Date() ? 'ACTIVE' : 'EXPIRED'}</span>
+            </div>`;
+        }).join('');
+    }
+
+    // =============================================
+    // SECURITY: API Key
+    // =============================================
+    async function validateApiKey() {
+        const key = document.getElementById('apiKeyInput').value.trim();
+        if (!key) { showToast('Enter an API key', 'error'); return; }
+
+        const status = document.getElementById('apiKeyStatus');
+        status.innerHTML = '<span class="spinner-sm"></span> Validating...';
+
+        try {
+            const res = await fetch(`${API_BASE}/researcher.php?action=apikey`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${Auth.getToken()}`
+                },
+                body: JSON.stringify({ api_key: key })
+            });
+            const data = await res.json();
+            if (data.success) {
+                status.innerHTML = '<span style="color:var(--green);">&#10003; Valid API key</span>';
+                document.getElementById('currentApiKey').textContent = key.slice(0, 6) + '••••••••';
+                showToast('API key validated', 'success');
+            } else {
+                status.innerHTML = '<span style="color:var(--red);">&#10007; Invalid API key</span>';
+            }
+        } catch (e) {
+            status.innerHTML = '<span style="color:var(--red);">&#10007; Validation failed</span>';
+        }
+    }
+
+    // =============================================
+    // RESEARCHER STATS
+    // =============================================
+    async function loadResearcherStats() {
+        try {
+            const res = await API.get('/researcher.php?action=stats');
+            // Stats data available if needed for additional UI elements
+        } catch (e) {
+            console.error('Stats error:', e);
+        }
+    }
+
+    // =============================================
+    // DATASET LOG
+    // =============================================
+    function logDataset(name) {
+        const ts = new Date().toLocaleTimeString('en-US', { hour12: false });
+        datasetAccessLog.unshift({ name, time: ts });
+        if (datasetAccessLog.length > 20) datasetAccessLog.pop();
+        renderDatasetLog();
+    }
+
+    function renderDatasetLog() {
+        const el = document.getElementById('datasetLog');
+        el.innerHTML = datasetAccessLog.map(d =>
+            `<div><span class="t-dim">[${d.time}]</span> <span class="t-cyan">${d.name}</span></div>`
+        ).join('');
+    }
+
+    // =============================================
+    // LOGOUT
+    // =============================================
+    function doLogout() {
+        // Fire-and-forget server logout
+        fetch(`${API_BASE}/logout.php`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${Auth.getToken()}` }
+        }).catch(() => {});
+        localStorage.clear();
+        sessionStorage.clear();
+        window.location.replace('index.html');
+    }
+
+    // =============================================
+    // UTILITIES
+    // =============================================
+    function escHtml(str) {
+        if (!str) return '';
+        const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+        return String(str).replace(/[&<>"']/g, c => map[c]);
+    }
+
+    function formatTimestamp(ts) {
+        if (!ts) return '';
+        const d = new Date(ts);
+        return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' ' +
+            d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+    }
+    </script>
+</body>
+</html>

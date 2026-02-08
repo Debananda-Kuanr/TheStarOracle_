@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Star Oracle - Real-time Asteroid Intelligence</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Roboto:wght@300;400;500;700&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --primary-glow: #667eea;
+            --secondary-glow: #764ba2;
+            --danger-glow: #ff4757;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: #0a0a1a;
+            overflow-x: hidden;
+        }
+
+        .font-poppins {
+            font-family: 'Poppins', sans-serif;
+        }
+
+
+        /* Gradient Text */
+        .gradient-text {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #ff4757 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Smooth Glowing Hero Text */
+        .hero-title {
+            font-size: 3.5rem;
+            font-weight: 900;
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+            animation: heroGlow 4s ease-in-out infinite;
+        }
+
+        @media (max-width: 768px) {
+            .hero-title {
+                font-size: 2.25rem;
+            }
+        }
+
+        @media (min-width: 769px) and (max-width: 1024px) {
+            .hero-title {
+                font-size: 3rem;
+            }
+        }
+
+        @media (min-width: 1025px) {
+            .hero-title {
+                font-size: 3.75rem;
+            }
+        }
+
+        .hero-title .gradient-text {
+            display: inline-block;
+            animation: glowPulse 4s ease-in-out infinite;
+        }
+
+        .hero-subtitle-primary {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #d1d5db;
+            margin-bottom: 1rem;
+            animation: subtitleGlow 4s ease-in-out infinite;
+            animation-delay: 0.2s;
+        }
+
+        .hero-subtitle-secondary {
+            font-size: 1rem;
+            color: #9ca3af;
+            margin-bottom: 3rem;
+            font-weight: 300;
+            animation: subtitleGlow 4s ease-in-out infinite;
+            animation-delay: 0.4s;
+        }
+
+        @keyframes heroGlow {
+
+            0%,
+            100% {
+                text-shadow: 0 0 20px rgba(102, 126, 234, 0.3), 0 0 40px rgba(102, 126, 234, 0.1);
+            }
+
+            50% {
+                text-shadow: 0 0 30px rgba(102, 126, 234, 0.5), 0 0 60px rgba(102, 126, 234, 0.2), 0 0 80px rgba(118, 75, 162, 0.1);
+            }
+        }
+
+        @keyframes glowPulse {
+
+            0%,
+            100% {
+                filter: drop-shadow(0 0 20px rgba(102, 126, 234, 0.4));
+            }
+
+            50% {
+                filter: drop-shadow(0 0 40px rgba(102, 126, 234, 0.6)) drop-shadow(0 0 60px rgba(118, 75, 162, 0.3));
+            }
+        }
+
+        @keyframes subtitleGlow {
+
+            0%,
+            100% {
+                opacity: 0.85;
+                text-shadow: 0 0 10px rgba(102, 126, 234, 0.2);
+            }
+
+            50% {
+                opacity: 1;
+                text-shadow: 0 0 20px rgba(102, 126, 234, 0.4);
+            }
+        }
+
+        /* Subtle Effects */
+        h1 {
+            line-height: 1.1;
+        }
+
+        /* Glassmorphism */
+        .glass {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Animated Border */
+        .animated-border {
+            position: relative;
+            background: linear-gradient(#0a0a1a, #0a0a1a) padding-box,
+                linear-gradient(135deg, #667eea, #764ba2, #ff4757) border-box;
+            border: 2px solid transparent;
+        }
+
+
+
+        /* Float Animation */
+        .float {
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-20px);
+            }
+        }
+
+        /* Orbit Animation */
+        .orbit {
+            animation: orbit 20s linear infinite;
+        }
+
+        @keyframes orbit {
+            from {
+                transform: rotate(0deg) translateX(150px) rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg) translateX(150px) rotate(-360deg);
+            }
+        }
+
+        /* Feature Card Hover */
+        .feature-card {
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(102, 126, 234, 0.2);
+        }
+
+        /* Navbar */
+        nav {
+            transition: background 0.3s ease;
+        }
+
+        nav.scrolled {
+            background: rgba(10, 10, 26, 0.95);
+            backdrop-filter: blur(20px);
+        }
+
+        /* Button Styles */
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            border: 2px solid #667eea;
+            transition: all 0.3s ease;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(102, 126, 234, 0.1);
+            transform: translateY(-2px);
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #0a0a1a;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(#667eea, #764ba2);
+            border-radius: 4px;
+        }
+
+        /* Stats Cards */
+        .stats-card {
+            transition: all 0.3s ease;
+        }
+
+        .stats-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.15);
+        }
+
+        .hero-wrapper {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        align-items: center;
+        gap: 2rem;
+        width: 100%;
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    @media (max-width: 1024px) {
+        .hero-wrapper {
+            grid-template-columns: 1fr;
+            text-align: center;
+        }
+    }
+
+    .data-terminal {
+        background: rgba(255, 255, 255, 0.02);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 2rem;
+        padding: 2rem;
+        position: relative;
+        box-shadow: 0 0 80px rgba(102, 126, 234, 0.1);
+    }
+
+    .data-terminal::before {
+        content: '';
+        position: absolute;
+        top: -2px; left: -2px; right: -2px; bottom: -2px;
+        background: linear-gradient(135deg, #667eea, transparent, #ff4757);
+        z-index: -1;
+        border-radius: 2rem;
+        opacity: 0.3;
+    }
+
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.5rem 1rem;
+        background: rgba(102, 126, 234, 0.1);
+        border: 1px solid rgba(102, 126, 234, 0.2);
+        border-radius: 1rem;
+        color: #a5b4fc;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        margin-bottom: 1.5rem;
+    }
+
+    .floating-ui-element {
+        animation: float-ui 5s ease-in-out infinite;
+    }
+
+    @keyframes float-ui {
+        0%, 100% { transform: translate(0, 0); }
+        50% { transform: translate(-10px, -15px); }
+    }
+
+    /* Lighting for blank areas */
+    .bg-glow-left {
+        position: absolute;
+        top: 20%; left: -10%;
+        width: 40%; height: 60%;
+        background: radial-gradient(circle, rgba(102, 126, 234, 0.08) 0%, transparent 70%);
+        pointer-events: none;
+    }
+    </style>
+</head>
+
+<body class="min-h-screen text-white">
+
+    <!-- Navigation -->
+    <nav class="fixed top-0 left-0 right-0 z-50 px-6 py-4">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div
+                    class="w-10 h-10 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 flex items-center justify-center glow-indigo">
+                    <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                        <path
+                            d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
+                    </svg>
+                </div>
+                <span class="text-xl font-poppins font-bold gradient-text">STAR ORACLE</span>
+            </div>
+
+            <div class="hidden md:flex items-center space-x-8">
+                <a href="#features" class="text-gray-300 hover:text-indigo-400 transition">Features</a>
+                <a href="#how-it-works" class="text-gray-300 hover:text-indigo-400 transition">How It Works</a>
+                <a href="#about" class="text-gray-300 hover:text-indigo-400 transition">About</a>
+            </div>
+
+            <div class="flex items-center space-x-4">
+                <a href="login-user.html"
+                    class="btn-secondary px-5 py-2 rounded-full font-semibold text-indigo-400">Login</a>
+                <a href="register.html" class="btn-primary px-5 py-2 rounded-full font-semibold text-white">Register</a>
+            </div>
+        </div>
+    </nav>
+
+  <section class="relative min-h-screen flex items-center px-6 lg:px-20 overflow-hidden pt-24 md:pt-0">
+    <div class="bg-glow-left"></div>
+    <div class="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-indigo-900/10 to-transparent pointer-events-none"></div>
+
+    <div class="hero-wrapper z-10">
+        <div class="max-w-2xl">
+            <div class="status-badge">
+                <span class="relative flex h-2 w-2 mr-3">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
+                </span>
+                Orbital Surveillance Active
+            </div>
+            
+            <h1 class="text-6xl lg:text-8xl font-poppins font-extrabold leading-tight mb-6">
+                Defend <br>
+                <span class="gradient-text">The Blue Dot.</span>
+            </h1>
+            
+            <p class="text-xl text-gray-400 mb-10 leading-relaxed max-w-lg">
+                Access direct telemetry from the NASA Deep Space Network. Monitor potentially hazardous objects with precision intelligence.
+            </p>
+
+            <div class="flex flex-wrap gap-5">
+                <a href="dashboard.html" class="btn-primary px-8 py-4 rounded-xl font-bold flex items-center gap-3">
+                    Launch Command Center
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                </a>
+                <div class="flex items-center gap-4 px-6 py-4 glass rounded-xl border-white/5">
+                    <div class="text-left">
+                        <p class="text-[10px] text-gray-500 uppercase font-bold tracking-widest">Global Status</p>
+                        <p class="text-sm font-bold text-green-400">NOMINAL</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="hidden lg:block relative data-terminal floating-ui-element">
+            <div class="grid grid-cols-2 gap-4">
+                <div class="glass p-5 rounded-2xl border-indigo-500/20">
+                    <p class="text-xs text-indigo-300 font-bold mb-4 uppercase">Vector Analysis</p>
+                    <div class="h-20 flex items-end gap-1">
+                        <div class="w-full bg-indigo-500/20 h-1/2 rounded-t-sm animate-pulse"></div>
+                        <div class="w-full bg-indigo-500/40 h-3/4 rounded-t-sm"></div>
+                        <div class="w-full bg-indigo-500/60 h-full rounded-t-sm animate-pulse"></div>
+                        <div class="w-full bg-indigo-500/40 h-2/3 rounded-t-sm"></div>
+                    </div>
+                </div>
+                
+                <div class="glass p-5 rounded-2xl border-red-500/20">
+                    <p class="text-xs text-red-300 font-bold mb-2 uppercase">Proximity Alert</p>
+                    <div class="flex items-center justify-between">
+                        <span class="text-2xl font-bold" id="hazardousCountMobile">25</span>
+                        <div class="w-10 h-10 rounded-full border-2 border-red-500/50 flex items-center justify-center animate-ping">
+                            <div class="w-2 h-2 bg-red-500 rounded-full"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-span-2 glass p-6 rounded-2xl border-white/5">
+                    <div class="flex justify-between items-center mb-4">
+                        <span class="text-xs font-bold text-gray-500 uppercase">Live Object Feed</span>
+                        <span class="text-[10px] bg-green-500/20 text-green-400 px-2 py-1 rounded">SSL ENCRYPTED</span>
+                    </div>
+                    <div class="space-y-3">
+                        <div class="h-2 w-full bg-white/5 rounded-full overflow-hidden">
+                            <div class="h-full bg-indigo-500 w-3/4"></div>
+                        </div>
+                        <div class="h-2 w-full bg-white/5 rounded-full overflow-hidden">
+                            <div class="h-full bg-purple-500 w-1/2"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="absolute -top-10 -right-10 w-32 h-32 glass rounded-full flex items-center justify-center border-white/10 rotate-12">
+                <svg class="w-16 h-16 text-indigo-500/50" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
+                </svg>
+            </div>
+        </div>
+    </div>
+</section>
+
+    <!-- Features Section -->
+    <section id="features" class="py-24 px-6 relative">
+        <div class="max-w-7xl mx-auto">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl md:text-5xl font-poppins font-bold mb-4">
+                    <span class="gradient-text">POWERFUL</span> FEATURES
+                </h2>
+                <p class="text-gray-400 text-lg max-w-2xl mx-auto">
+                    Advanced tools for tracking, analyzing, and understanding near-Earth objects
+                </p>
+            </div>
+
+            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- Feature 1 -->
+                <div class="feature-card glass rounded-2xl p-6 animated-border">
+                    <div
+                        class="w-14 h-14 rounded-xl bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center mb-4 glow-indigo">
+                        <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold mb-2 text-white">Real-time NASA Data</h3>
+                    <p class="text-gray-400">Live feeds from NASA's Near Earth Object Web Service, updated continuously.
+                    </p>
+                </div>
+
+                <!-- Feature 2 -->
+                <div class="feature-card glass rounded-2xl p-6 animated-border">
+                    <div
+                        class="w-14 h-14 rounded-xl bg-gradient-to-br from-red-500 to-orange-600 flex items-center justify-center mb-4">
+                        <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold mb-2 text-white">Risk Analysis</h3>
+                    <p class="text-gray-400">Advanced algorithms calculate threat levels based on size, velocity, and
+                        trajectory.</p>
+                </div>
+
+                <!-- Feature 3 -->
+                <div class="feature-card glass rounded-2xl p-6 animated-border">
+                    <div
+                        class="w-14 h-14 rounded-xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center mb-4 glow-purple">
+                        <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold mb-2 text-white">3D Orbit Visualization</h3>
+                    <p class="text-gray-400">Interactive Three.js visualizations showing asteroid trajectories around
+                        Earth.</p>
+                </div>
+
+                <!-- Feature 4 -->
+                <div class="feature-card glass rounded-2xl p-6 animated-border">
+                    <div
+                        class="w-14 h-14 rounded-xl bg-gradient-to-br from-green-500 to-teal-600 flex items-center justify-center mb-4">
+                        <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold mb-2 text-white">Smart Alerts</h3>
+                    <p class="text-gray-400">Customizable notifications for close approaches and hazardous objects.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works Section -->
+    <section id="how-it-works" class="py-24 px-6 relative">
+        <div class="max-w-7xl mx-auto">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl md:text-5xl font-poppins font-bold mb-4">
+                    HOW IT <span class="gradient-text">WORKS</span>
+                </h2>
+                <p class="text-gray-400 text-lg max-w-2xl mx-auto">
+                    From NASA data to your dashboard in milliseconds
+                </p>
+            </div>
+
+            <div class="relative">
+                <!-- Connection Line -->
+                <div
+                    class="hidden lg:block absolute top-1/2 left-0 right-0 h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-red-500 -translate-y-1/2">
+                </div>
+
+                <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+                    <!-- Step 1 -->
+                    <div class="relative text-center">
+                        <div class="glass rounded-2xl p-6 relative z-10">
+                            <div
+                                class="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center mx-auto mb-4 glow-indigo pulse-glow">
+                                <span class="text-2xl font-poppins font-bold">1</span>
+                            </div>
+                            <h3 class="text-xl font-bold mb-2 text-indigo-400">NASA API</h3>
+                            <p class="text-gray-400">Data streams from NASA's NeoWs API in real-time</p>
+                        </div>
+                    </div>
+
+                    <!-- Step 2 -->
+                    <div class="relative text-center">
+                        <div class="glass rounded-2xl p-6 relative z-10">
+                            <div class="w-16 h-16 rounded-full bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center mx-auto mb-4 glow-purple pulse-glow"
+                                style="animation-delay: 0.5s;">
+                                <span class="text-2xl font-poppins font-bold">2</span>
+                            </div>
+                            <h3 class="text-xl font-bold mb-2 text-purple-400">Processing</h3>
+                            <p class="text-gray-400">Our backend processes and validates incoming data</p>
+                        </div>
+                    </div>
+
+                    <!-- Step 3 -->
+                    <div class="relative text-center">
+                        <div class="glass rounded-2xl p-6 relative z-10">
+                            <div class="w-16 h-16 rounded-full bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center mx-auto mb-4 pulse-glow"
+                                style="animation-delay: 1s;">
+                                <span class="text-2xl font-poppins font-bold">3</span>
+                            </div>
+                            <h3 class="text-xl font-bold mb-2 text-orange-400">Risk Engine</h3>
+                            <p class="text-gray-400">AI-powered analysis calculates threat levels</p>
+                        </div>
+                    </div>
+
+                    <!-- Step 4 -->
+                    <div class="relative text-center">
+                        <div class="glass rounded-2xl p-6 relative z-10">
+                            <div class="w-16 h-16 rounded-full bg-gradient-to-br from-green-500 to-teal-600 flex items-center justify-center mx-auto mb-4 pulse-glow"
+                                style="animation-delay: 1.5s;">
+                                <span class="text-2xl font-poppins font-bold">4</span>
+                            </div>
+                            <h3 class="text-xl font-bold mb-2 text-green-400">Dashboard</h3>
+                            <p class="text-gray-400">Beautiful visualizations delivered to your screen</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section id="about" class="py-24 px-6 relative">
+        <div class="max-w-4xl mx-auto text-center">
+            <div class="glass rounded-3xl p-12 animated-border">
+                <h2 class="text-4xl md:text-5xl font-poppins font-bold mb-6">
+                    PROTECTING <span class="gradient-text">EARTH</span>
+                </h2>
+                <p class="text-gray-300 text-lg mb-8 leading-relaxed">
+                    The Star Oracle is dedicated to making asteroid tracking accessible to everyone.
+                    By leveraging NASA's extensive database of near-Earth objects, we provide real-time
+                    intelligence on potential threats and fascinating cosmic visitors alike.
+                </p>
+                <p class="text-gray-400 mb-8">
+                    Whether you're a researcher studying orbital mechanics, an educator teaching about
+                    planetary defense, or simply curious about what's flying past our planet,
+                    Star Oracle gives you the tools to explore our cosmic neighborhood.
+                </p>
+                <a href="register.html" class="btn-primary inline-block px-10 py-4 rounded-full font-bold text-lg">
+                    Join The Mission
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="py-12 px-6 border-t border-gray-800">
+        <div class="max-w-7xl mx-auto">
+            <div class="grid md:grid-cols-4 gap-8 mb-8">
+                <div>
+                    <div class="flex items-center space-x-3 mb-4">
+                        <div
+                            class="w-10 h-10 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 flex items-center justify-center">
+                            <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                                <path
+                                    d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
+                            </svg>
+                        </div>
+                        <span class="text-lg font-poppins font-bold gradient-text">STAR ORACLE</span>
+                    </div>
+                    <p class="text-gray-400 text-sm">
+                        Real-time asteroid tracking powered by NASA data.
+                    </p>
+                </div>
+
+                <div>
+                    <h4 class="font-bold text-white mb-4">Platform</h4>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="dashboard.html" class="hover:text-indigo-400 transition">Dashboard</a></li>
+                        <li><a href="live-feed.html" class="hover:text-indigo-400 transition">Live Feed</a></li>
+                        <li><a href="risk-analysis.html" class="hover:text-indigo-400 transition">Risk Analysis</a></li>
+                        <li><a href="orbit-3d.html" class="hover:text-indigo-400 transition">3D Orbits</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 class="font-bold text-white mb-4">Account</h4>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="login-user.html" class="hover:text-indigo-400 transition">User Login</a></li>
+                        <li><a href="login-researcher.html" class="hover:text-indigo-400 transition">Researcher
+                                Login</a></li>
+                        <li><a href="register.html" class="hover:text-indigo-400 transition">Register</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 class="font-bold text-white mb-4">Resources</h4>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="https://api.nasa.gov" target="_blank" class="hover:text-indigo-400 transition">NASA
+                                API</a></li>
+                        <li><a href="#" class="hover:text-indigo-400 transition">Documentation</a></li>
+                        <li><a href="#" class="hover:text-indigo-400 transition">Contact</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="border-t border-gray-800 pt-8 flex flex-col md:flex-row items-center justify-between">
+                <p class="text-gray-500 text-sm">
+                    © 2026 Star Oracle. Data provided by NASA NeoWs API.
+                </p>
+                <div class="flex items-center space-x-4 mt-4 md:mt-0">
+                    <span class="text-gray-500 text-sm">Built with</span>
+                    <span class="text-red-500">♥</span>
+                    <span class="text-gray-500 text-sm">By Debananda Kuanr</span>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Generate Mini Stars
+        function createMiniStars() {
+            const container = document.body;
+            const starCount = 80;
+
+            // Create a container for stars
+            const starsContainer = document.createElement('div');
+            starsContainer.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                pointer-events: none;
+                z-index: 0;
+                overflow: hidden;
+            `;
+
+            for (let i = 0; i < starCount; i++) {
+                const star = document.createElement('div');
+                star.style.cssText = `
+                    position: absolute;
+                    width: 2px;
+                    height: 2px;
+                    background: white;
+                    border-radius: 50%;
+                    left: ${Math.random() * 100}%;
+                    top: ${Math.random() * 100}%;
+                    opacity: ${Math.random() * 0.5 + 0.2};
+                `;
+                starsContainer.appendChild(star);
+            }
+
+            container.insertBefore(starsContainer, container.firstChild);
+        }
+
+
+
+        // Navbar scroll effect
+        window.addEventListener('scroll', () => {
+            const nav = document.querySelector('nav');
+            if (window.scrollY > 50) {
+                nav.classList.add('scrolled');
+            } else {
+                nav.classList.remove('scrolled');
+            }
+        });
+
+        // Fetch live stats from API
+        async function fetchStats() {
+            try {
+                const response = await fetch('../backend/api/asteroids.php');
+                const data = await response.json();
+
+                if (data.success) {
+                    document.getElementById('asteroidCount').textContent = data.stats.total_count;
+                    document.getElementById('hazardousCount').textContent = data.stats.hazardous_count;
+
+                    if (data.stats.closest_asteroid) {
+                        const distance = Math.round(data.stats.closest_asteroid.distance_km).toLocaleString();
+                        document.getElementById('closestDistance').textContent = distance;
+                    }
+                }
+            } catch (error) {
+                console.log('Stats will be available when API is connected');
+                // Set demo values
+                document.getElementById('asteroidCount').textContent = '24';
+                document.getElementById('hazardousCount').textContent = '3';
+                document.getElementById('closestDistance').textContent = '1.2M';
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            createMiniStars();
+            fetchStats();
+        });
+
+        // Smooth scroll
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+    </script>
+</body>
+
+</html>
